@@ -1,0 +1,9 @@
+(hack since Issues are not enabled on this project?)
+
+Looks like G85 - probably slots? are not supported as is. I am facing this issue with my KiCad project which uses those.
+
+It looks like some German guy has worked in that direction - see https://git.phoerauf.de/VT7/gerbmerge-utils/blob/master/gerbmerge-1.8/gerbmerge/jobs.py
+
+Only problem is that his code is based on the original 1.8 soursce
+
+I wonder if there is a chance that one day somebody would merge this 1.9 branch with his G85 progress
