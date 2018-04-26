@@ -28,6 +28,7 @@ import makestroke
 import amacro
 import geometry
 import util
+import excellonParser
 
 # Parsing Gerber/Excellon files is currently very brittle. A more robust
 # RS274X/Excellon parser would be a good idea and allow this program to work
@@ -631,171 +632,17 @@ class Job:
       print self.commands[layername]
 
   def parseExcellon(self, fullname):
-    #print 'Reading data from %s ...' % fullname
-
-    fid = file(fullname, 'rt')
-    currtool = None
-    suppress_leading = True     # Suppress leading zeros by default, equivalent to 'INCH,TZ'
-
-    # We store Excellon X/Y data in ten-thousandths of an inch. If the Config
-    # option ExcellonDecimals is not 4, we must adjust the values read from the
-    # file by a divisor to convert to ten-thousandths.  This is only used in
-    # leading-zero suppression mode. In trailing-zero suppression mode, we must
-    # trailing-zero-pad all input integers to M+N digits (e.g., 6 digits for 2.4 mode)
-    # specified by the 'zeropadto' variable.
+    excelonDigits = 0
     if self.ExcellonDecimals > 0:
-      divisor = 10.0**(4 - self.ExcellonDecimals)
-      zeropadto = 2+self.ExcellonDecimals
-    else:
-      divisor = 10.0**(4 - config.Config['excellondecimals'])
-      zeropadto = 2+config.Config['excellondecimals']
+        excelonDigits = self.ExcellonDecimals + 2
+    else:    
+        excelonDigits = config.Config['excellondecimals'] + 2
     
-    # Protel takes advantage of optional X/Y components when the previous one is the same,
-    # so we have to remember them.
-    last_x = last_y = 0
-
-    # Helper function to convert X/Y strings into integers in units of ten-thousandth of an inch.
-    def xln2tenthou(L, divisor=divisor, zeropadto=zeropadto):
-      V = []
-      for s in L:
-        if s is not None:
-          if not suppress_leading:
-            s = s + '0'*(zeropadto-len(s))
-          V.append(int(round(int(s)*divisor)))
-        else:
-          V.append(None)
-      return tuple(V)
-
-    # Helper function to convert X/Y strings into integers in units of ten-thousandth of an inch.
-    def xln2tenthou2 (L, divisor=divisor, zeropadto=zeropadto):
-      V = []
-      for s in L:
-        if s is not None:
-          V.append(int(float(s)*1000*divisor))
-        else:
-          V.append(None)
-      return tuple(V)
-
-    for line in fid.xreadlines():
-      # Get rid of CR characters
-      line = string.replace(line, '\x0D', '')
-
-# add support for DipTrace
-      if line[:6]=='METRIC':
-        if (config.Config['measurementunits'] == 'inch'):
-          raise RuntimeError, "File %s units do match config file" % fullname
-
-      if line[:3] == 'T00': # a tidying up that we can ignore
-        continue
-# end metric/diptrace support
-
-      # Protel likes to embed comment lines beginning with ';'
-      if line[0]==';':
-        continue
-
-      # Check for leading/trailing zeros included ("INCH,LZ" or "INCH,TZ")
-      match = xzsup_pat.match(line)
-      if match:
-        if match.group(1)=='L':
-          # LZ --> Leading zeros INCLUDED
-          suppress_leading = False
-        else:
-          # TZ --> Trailing zeros INCLUDED
-          suppress_leading = True
-        continue
-        
-      # See if a tool is being defined. First try to match with tool name+size
-      match = xtdef_pat.match(line)    # xtdef_pat and xtdef2_pat expect tool name and diameter
-      if match is None:                # but xtdef_pat expects optional feed/speed between T and C
-        match = xtdef2_pat.match(line) # and xtdef_2pat expects feed/speed at the end
-      if match:
-        currtool, diam = match.groups()
-        try:
-          diam = float(diam)
-        except:
-          raise RuntimeError, "File %s has illegal tool diameter '%s'" % (fullname, diam)
-
-        # Canonicalize tool number because Protel (of course) sometimes specifies it
-        # as T01 and sometimes as T1. We canonicalize to T01.
-        currtool = 'T%02d' % int(currtool[1:])
-
-        if self.xdiam.has_key(currtool):
-          raise RuntimeError, "File %s defines tool %s more than once" % (fullname, currtool)
-        self.xdiam[currtool] = diam
-        continue
-
-      # Didn't match TxxxCyyy. It could be a tool change command 'Tdd'.
-      match = xtool_pat.match(line)
-      if match:
-        currtool = match.group(1)
-
-        # Canonicalize tool number because Protel (of course) sometimes specifies it
-        # as T01 and sometimes as T1. We canonicalize to T01.
-        currtool = 'T%02d' % int(currtool[1:])
-
-        # KiCad specific fixes
-        if currtool == 'T00':
-          continue
-        # end KiCad fixes
-
-        # Diameter will be obtained from embedded tool definition, local tool list or if not found, the global tool list
-        try:
-          diam = self.xdiam[currtool]
-        except:
-          if self.ToolList:
-            try:
-              diam = self.ToolList[currtool]
-            except:
-              raise RuntimeError, "File %s uses tool code %s that is not defined in the job's tool list" % (fullname, currtool)
-          else:
-            try:
-              diam = config.DefaultToolList[currtool]
-            except:
-              #print config.DefaultToolList
-              raise RuntimeError, "File %s uses tool code %s that is not defined in default tool list" % (fullname, currtool)
-
-        self.xdiam[currtool] = diam
-        continue
-
-      # Plunge command?
-      match = xydraw_pat.match(line)
-      if match:
-        x, y, stop_x, stop_y = xln2tenthou(match.groups())
-      else:
-        match = xydraw_pat2.match(line)
-        if match:
-          x, y, stop_x, stop_y = xln2tenthou2(match.groups())
-        else:
-          match = xdraw_pat.match(line)
-          if match:
-            x = xln2tenthou(match.groups())[0]
-            y = last_y
-          else:
-            match = ydraw_pat.match(line)
-            if match:
-              y = xln2tenthou(match.groups())[0]
-              x = last_x
-          
-      if match:
-        if currtool is None:
-          raise RuntimeError, 'File %s has plunge command without previous tool selection' % fullname
-
-        try:
-          self.xcommands[currtool].append((x,y,stop_x,stop_y))
-        except KeyError:
-          self.xcommands[currtool] = [(x,y,stop_x,stop_y)]
-
-        last_x = x
-        last_y = y
-        continue
-
-      # It had better be an ignorable
-      for pat in XIgnoreList:
-        if pat.match(line):
-          break
-      else:
-        raise RuntimeError, 'File %s has uninterpretable line:\n  %s' % (fullname, line)
-
+    excellon = excellonParser.excellonParser(expectedDigits=excelonDigits, expectedUnits=config.Config['measurementunits'])
+    excellon.loadFile(fullname)
+    self.xdiam = excellon.getxdiam()
+    self.xcommands = excellon.getxcommands()
+    
   def hasLayer(self, layername):
     return self.commands.has_key(layername)
 
