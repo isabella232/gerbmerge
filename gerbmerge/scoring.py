@@ -271,16 +271,35 @@ def writeScoring(fid, Place, OriginX, OriginY, MaxXExtent, MaxYExtent):
     y = layout.y - dy
     X = layout.x + layout.width_in() + dx
     Y = layout.y + layout.height_in() + dy
-
+    
+    print "Crossing point xy: (" + str(x) + "," + str(y) + ")"
+    print "Crossing point xY: (" + str(x) + "," + str(Y) + ")"
+    print "Crossing point Xy: (" + str(X) + "," + str(y) + ")"
+    print "Crossing point XY: (" + str(X) + "," + str(Y) + ")"
+    print "---"
+    
+    #calculate mousebite location 
+    mousebiteX = layout.x + layout.width_in() / 2
+    mousebiteY = layout.y + layout.height_in() / 2
+    mousebiteLen = 0.080
+     
     # Just so we don't get 3.75000000004 and 3.75000000009, we round to
     # 2.5 limits.
     x,y,X,Y = [round(val,5) for val in [x,y,X,Y]]
 
-    if 0: # Scoring lines go all the way across the panel now
-      addHorizontalLine(Lines, x, X, Y, extents)   # above job
-      addVerticalLine(Lines, X, y, Y, extents)     # to the right of job
-      addHorizontalLine(Lines, x, X, y, extents)   # below job
-      addVerticalLine(Lines, x, y, Y, extents)     # to the left of job
+    if 1: # Scoring lines go all the way across the panel now
+      addHorizontalLine(Lines, x, mousebiteX - mousebiteLen/2, Y, extents)   # above job
+      addHorizontalLine(Lines, mousebiteX + mousebiteLen/2, X, Y, extents)   # above job
+
+      addVerticalLine(Lines, X, y, mousebiteY - mousebiteLen/2, extents)     # to the right of job
+      addVerticalLine(Lines, X, mousebiteY + mousebiteLen/2, Y, extents)     # to the right of job
+
+      addHorizontalLine(Lines, x, mousebiteX - mousebiteLen/2, y, extents)   # below job
+      addHorizontalLine(Lines, mousebiteX + mousebiteLen/2, X, y, extents)   # below job
+
+      addVerticalLine(Lines, x, y, mousebiteY - mousebiteLen/2, extents)     # to the left of job
+      addVerticalLine(Lines, X, mousebiteY + mousebiteLen/2, Y, extents)     # to the left of job
+
     else:
       addHorizontalLine(Lines, OriginX, MaxXExtent, Y, extents)   # above job
       addVerticalLine(Lines, X, OriginY, MaxYExtent, extents)     # to the right of job
