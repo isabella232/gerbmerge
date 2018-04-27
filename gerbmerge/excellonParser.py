@@ -2,16 +2,11 @@ import re
 import string
 
 # Patterns for Excellon interpretation
-xtool_pat = re.compile(r'^(T\d+)$')           # Tool selection
-xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)(?:G85X([+-]?\d+)Y([+-]?\d+))?$')    # Plunge command with optional G85
-xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)(?:G85X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*))?$')    # Plunge command with optional G85
-xdraw_pat = re.compile(r'^X([+-]?\d+)$')    # Plunge command, repeat last Y value
-ydraw_pat = re.compile(r'^Y([+-]?\d+)$')    # Plunge command, repeat last X value
 xtdef_pat = re.compile(r'^(T\d+)(?:F\d+)?(?:S\d+)?C([0-9.]+)$') # Tool+diameter definition with optional
                                                                 # feed/speed (for Protel)
 xtdef2_pat = re.compile(r'^(T\d+)C([0-9.]+)(?:F\d+)?(?:S\d+)?$') # Tool+diameter definition with optional
                                                                 # feed/speed at the end (for OrCAD)
-xzsup_pat = re.compile(r'^(?:INCH|METRIC)(,([LT])Z)?$')      # Leading/trailing zeros INCLUDED
+
 
 XIgnoreList = ( \
   re.compile(r'^%$'),
@@ -23,43 +18,8 @@ XIgnoreList = ( \
   re.compile(r'^M71$'),   # Metric Mode
   re.compile(r'^G90$')    # Absolute Mode
   )
-  
-class coordinates:
-    def __init__(self):
-        self.x = 0.0
-        self.y = 0.0  
-        
-          
 
-class excellonParser:
- def __init__(self, expectedDigits=None, expectedUnits = 'inch'):
-     self.toollist = []   
-    # Excellon commands are grouped by tool number in a dictionary.
-    # This is to help sorting all jobs and writing out all plunge
-    # commands for a single tool.
-    # 
-    # The key to this dictionary is the full tool name, e.g., T03 as a
-    # string. Each command is an (X,Y,STOP_X,STOP_Y) integer tuple.
-    # STOP_X and STOP_Y are not none only if this is a G85 command.
-     self.xcommands = {}
-     # This is a dictionary mapping LOCAL tool names (e.g., T03) to diameters
-    # in inches for THIS JOB. This dictionary will be initially empty
-    # for old-style Excellon files with no embedded tool sizes. The
-    # main program will construct this dictionary from the global tool
-    # table in this case, once all jobs have been read in.
-     self.xdiam = {}
-     
-     self.expectedDigits = expectedDigits
-     self.expectedUnits = expectedUnits
-
-     self.zeroSuppression = 'leading' 
-     self.digits = None
-     self.units = None             
-     self.ToolList = None
-     
- # Helper function to convert X/Y strings into integers in units of ten-thousandth of an inch.
- @staticmethod
- def xln2tenthou(L, divisor, zeropadto, zeroSuppression):
+def xln2tenthou(L, divisor, zeropadto, zeroSuppression):
       V = []
       for s in L:
         if s is not None:
@@ -73,10 +33,8 @@ class excellonParser:
         else:
           V.append(None)
       return tuple(V)
-
- # Helper function to convert X/Y strings into integers in units of ten-thousandth of an inch.
- @staticmethod
- def xln2tenthou2 (L, divisor, zeropadto):
+      
+def xln2tenthou2 (L, divisor, zeropadto):
       V = []
       for s in L:
         if s is not None:
@@ -84,8 +42,130 @@ class excellonParser:
         else:
           V.append(None)
       return tuple(V)
+
+#---------------------------------------------------------------------
+class ExcellonFormat:
+    def __init__(self, digits, decimals, units, zeroSuppression):
+        self.digits = digits
+        self.decimals = decimals
+        self.units = units
+        self.zeroSuppression = zeroSuppression
+
+#---------------------------------------------------------------------
+class Coordinates:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        
+#---------------------------------------------------------------------
+# Abstract class that is representing excellon command, specific comand should implement this interface
+class Command:
+    @staticmethod
+    def fromString(string, excellonFormat):
+        'This function should return Command object if it can be paresed from provided string or None'
+        raise NotImplementedError("Subclass must implement abstract method")   
+    def toString(self, excelonFormat):
+        raise NotImplementedError("Subclass must implement abstract method")
+
+#---------------------------------------------------------------------
+class PlungeCommand(Command):
+    def __init__(self, coordinates):
+        self.coordinates = coordinates
+    @staticmethod
+    def fromString(string, excelonFormat, lastCoordinates, divisor):
+        xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)(?:G85X([+-]?\d+)Y([+-]?\d+))?$')    # Plunge command with optional G85
+        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)(?:G85X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*))?$')    # Plunge command with optional G85
+        xdraw_pat = re.compile(r'^X([+-]?\d+)$')    # Plunge command, repeat last Y value
+        ydraw_pat = re.compile(r'^Y([+-]?\d+)$')    # Plunge command, repeat last X value
+        match = xydraw_pat.match(string)
+        if match:
+            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.digits, excelonFormat.zeroSuppression)       
+            return PlungeCommand(Coordinates(x, y))
+        match = xydraw_pat2.match(string)
+        if match:
+            x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.digits)
+            return PlungeCommand(Coordinates(x, y))
+        match = xdraw_pat.match(string)
+        if match:
+            x = xln2tenthou(match.groups(),divisor, excelonFormat.digits, excelonFormat.zeroSuppression)[0]
+            return PlungeCommand(Coordinates(x, lastCoordinates.y))
+        match = ydraw_pat.match(string)
+        if match:
+            y = xln2tenthou(match.groups(),divisor, excelonFormat.digits, excelonFormat.zeroSuppression)[0]
+            return PlungeCommand(Coordinates(lastCoordinates.x, y))
+        return None   
+        
+    def toString(self, excelonFormat):
+        return
+    def getCoordinates(self):
+        return self.coordinates          
+
+#---------------------------------------------------------------------
+class SlotCommand(Command):
+    def __init__(self, startCoordinates, endCoordinates):
+        self.startCoordinates = startCoordinates
+        self.endCoordinates = endCoordinates
+        
+    @staticmethod
+    def fromString(string, excellonFormat, divisor):
+        xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)(?:G85X([+-]?\d+)Y([+-]?\d+))?$')    # Plunge command with optional G85
+        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)(?:G85X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*))?$')    # Plunge command with optional G85
+        match = xydraw_pat.match(string)
+        if match:
+            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.digits, excelonFormat.zeroSuppression)       
+            return SlotCommand(Coordinates(x, y), Coordinates(stop_x, stop_y))
+        match = xydraw_pat2.match(string)
+        if match:
+            x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.digits)
+            return SlotCommand(Coordinates(x, y), Coordinates(stop_x, stop_y))
+        return None
+        
+    def toString(self, excellonFormat):
+        return ''
+        
+    def getCoordinates(self):
+        return (self.startCoordinates, self.endCoordinates)            
+
+#---------------------------------------------------------------------
+class ToolchangeCommand:
+    def __init__(self, toolnumber):
+        self.tool = toolnumber
+    @staticmethod
+    def fromString(string):
+        match = re.compile(r'^(T\d+)$').match(string)          # Tool selection
+        if match:
+            return ToolchangeCommand(int(match.group()[1:]))
+        return None
+    def toString(self):
+        return 'T%02d' % self.tool          
+
+#---------------------------------------------------------------------
+class excellonParser:
+    def __init__(self, expectedDigits=None, expectedUnits = 'inch'):
+        self.toollist = []   
+        # Excellon commands are grouped by tool number in a dictionary.
+        # This is to help sorting all jobs and writing out all plunge
+        # commands for a single tool.
+        # 
+        # The key to this dictionary is the full tool name, e.g., T03 as a
+        # string. Each command is an (X,Y,STOP_X,STOP_Y) integer tuple.
+        # STOP_X and STOP_Y are not none only if this is a G85 command.
+        self.xcommands = {}
+        # This is a dictionary mapping LOCAL tool names (e.g., T03) to diameters
+        # in inches for THIS JOB. This dictionary will be initially empty
+        # for old-style Excellon files with no embedded tool sizes. The
+        # main program will construct this dictionary from the global tool
+        # table in this case, once all jobs have been read in.
+        self.xdiam = {}
+        
+        self.expectedDigits = expectedDigits
+        self.expectedUnits = expectedUnits
+        self.zeroSuppression = 'leading' 
+        self.digits = None
+        self.units = None             
+        self.ToolList = None
  
- def spliteFile(self, fileContent):
+    def spliteFile(self, fileContent):
         headerEnd = ["%", "M95"]
 
         header = ""
@@ -107,7 +187,7 @@ class excellonParser:
                             
         return header, content, footer
  
- def parseHeader(self, header, filename):
+    def parseHeader(self, header, filename):
         unitAndZerosPosition = re.compile(r'^(INCH|METRIC),((?:[LT])Z)?$')      # Leading/trailing zeros INCLUDED
         fileFormat = re.compile(r';FILE_FORMAT=(\d):(\d)')
         plating = re.compile(r';TYPE=(.+)')
@@ -118,22 +198,20 @@ class excellonParser:
             # Check for measurement unit and for leading/trailing zeros included ("INCH,LZ" or "INCH,TZ" or "METRIC,LZ" or "METRIC,TZ")
             match = unitAndZerosPosition.match(line)
             if match:
-                unit, zerosPosition = match.groups()
-                print unit
+                unit, zerosPosition = match.groups()         
                 if unit == "INCH":
                     self.units = 'inch'
                 elif unit == "METRIC":
                     self.units = 'metric'
                 else:
                     raise "Unsupported measurement unit."
-                print zerosPosition                
+
                 if zerosPosition == "LZ":
                     self.zeroSuppression = 'trailing'
                 elif zerosPosition == "TZ":
                     self.zeroSuppression = 'leading'
                 else:
                     raise "Unsupported zero suppression command"
-
 
             match = fileFormat.match(line)
             if match:
@@ -169,75 +247,59 @@ class excellonParser:
                 self.xdiam[currtool] = diam
                 continue  
                 
- def parseContent(self, content, filename):
-        divisor = 10.0**(4 - (self.digits-2))
-        for line in content.splitlines():
-            # Didn't match TxxxCyyy. It could be a tool change command 'Tdd'.
-            match = xtool_pat.match(line)
-            if match:
-                currtool = match.group(1)
-
-                # Canonicalize tool number because Protel (of course) sometimes specifies it
-                # as T01 and sometimes as T1. We canonicalize to T01.
-                currtool = 'T%02d' % int(currtool[1:])
-
-                # KiCad specific fixes
-                if currtool == 'T00':
-                    continue
-                # end KiCad fixes
- 
-                # Diameter will be obtained from embedded tool definition, local tool list or if not found, the global tool list
+    def getToolDiameter(self, tool, filename):
+        # Diameter will be obtained from embedded tool definition, local tool list or if not found, the global tool list
+        try:
+            diam = self.xdiam[tool]
+        except:
+            if self.ToolList:
                 try:
-                    diam = self.xdiam[currtool]
+                    diam = self.ToolList[tool]
                 except:
-                    if self.ToolList:
-                        try:
-                            diam = self.ToolList[currtool]
-                        except:
-                            raise RuntimeError, "File %s uses tool code %s that is not defined in the job's tool list" % (filename, currtool)
-                    else:
-                        try:
-                            diam = config.DefaultToolList[currtool]
-                        except:
-                            #print config.DefaultToolList
-                            raise RuntimeError, "File %s uses tool code %s that is not defined in default tool list" % (filename, currtool)
-
-                self.xdiam[currtool] = diam
-                continue
-
-            # Plunge command?
-            match = xydraw_pat.match(line)
-            if match:
-                x, y, stop_x, stop_y = self.xln2tenthou(match.groups(), divisor, self.digits, self.zeroSuppression)
+                    raise RuntimeError, "File %s uses tool code %s that is not defined in the job's tool list" % (filename, tool)
             else:
-                match = xydraw_pat2.match(line)
-                if match:
-                    x, y, stop_x, stop_y = self.xln2tenthou2(match.groups(), divisor, self.digits)
-                else:
-                    match = xdraw_pat.match(line)
-                    if match:
-                        x = self.xln2tenthou(match.groups(),divisor, self.digits, self.zeroSuppression)[0]
-                        y = last_y
-                    else:
-                        match = ydraw_pat.match(line)
-                        if match:
-                            y = self.xln2tenthou(match.groups(),divisor, self.digits, self.zeroSuppression)[0]
-                            x = last_x      
-              
-            if match:
+                try:
+                    diam = config.DefaultToolList[tool]
+                except:                    
+                    raise RuntimeError, "File %s uses tool code %s that is not defined in default tool list" % (filename, tool)
+        return diam
+
+    def parseContent(self, content, filename):
+        excellonFormat = ExcellonFormat(digits=2, decimals=self.digits-2, units=self.units, zeroSuppression=self.zeroSuppression)
+        divisor = 10.0**(4 - (self.digits-2))
+        lastCoordinates = None
+        currtool = None
+        
+        for line in content.splitlines():
+            toolCommand = ToolchangeCommand.fromString(line)
+            if toolCommand:         
+                if toolCommand.toString() != 'T00': # KiCad specific fixes, tool T00 is KiCad specific
+                    self.xdiam[toolCommand.toString()] = self.getToolDiameter(toolCommand.toString(), filename)
+                    currtool = toolCommand.toString()
+                continue
+                
+            command = PlungeCommand.fromString(line, excellonFormat, lastCoordinates, divisor)
+            if command:
+                lastCoordinates = command.getCoordinates()                
                 if currtool is None:
                     raise RuntimeError, 'File %s has plunge command without previous tool selection' % filename
-
-                try:
-                    self.xcommands[currtool].append((x,y,stop_x,stop_y))
-                except KeyError:
-                    self.xcommands[currtool] = [(x,y,stop_x,stop_y)]
-              
-                print "X: " + str(x) + ", Y: " + str(y)  
-
-                last_x = x
-                last_y = y
+                tmp = (command.getCoordinates().x, command.getCoordinates().y, None, None)
+                if currtool in self.xcommands:
+                    self.xcommands[currtool].append(tmp)
+                else:
+                    self.xcommands[currtool] = [tmp]
                 continue
+
+            slotCommand = SlotCommand.fromString(line, excellonFormat, divisor)
+            if slotCommand:
+                if currtool is None:
+                    raise RuntimeError, 'File %s has plunge command without previous tool selection' % filename                    
+                tmp = (slotCommand.getCoorcinates()(0).x, slotCommand.getCoorcinates()(0).y, slotCommand.getCoorcinates()(1).x, slotCommand.getCoorcinates()(1).y)
+                if currtool in self.xcommands:
+                    self.xcommands[currtool].append(tmp)
+                else:
+                    self.xcommands[currtool] = [tmp]
+                continue                
 
             # It had better be an ignorable
            # for pat in XIgnoreList:
@@ -246,7 +308,7 @@ class excellonParser:
            # else:
            #     raise RuntimeError, 'File %s has uninterpretable line:\n  %s' % (filename, line)
                  
- def loadFile(self, filename):
+    def loadFile(self, filename):
         print 'Reading data from %s ...' % filename
         fileContent = file(filename, 'rt')
         header, content, footer = self.spliteFile(fileContent)        
@@ -264,11 +326,11 @@ class excellonParser:
                     
         self.parseContent(content, filename)
 
- def getToollist(self):
+    def getToollist(self):
         return self.ToolList
- def getxdiam(self):            
+    def getxdiam(self):            
         return self.xdiam
- def getxcommands(self):
+    def getxcommands(self):
         return self.xcommands
                
  
