@@ -29,6 +29,7 @@ Apertures = (
    ('Rectangle', re.compile(r'^%AD(D\d+)R,([^X]+)X([^*]+)\*%$'), '%%AD%sR,%.5fX%.5f*%%\n'),
    ('Circle',    re.compile(r'^%AD(D\d+)C,([^*]+)\*%$'),         '%%AD%sC,%.5f*%%\n'),
    ('Oval',      re.compile(r'^%AD(D\d+)O,([^X]+)X([^*]+)\*%$'), '%%AD%sO,%.5fX%.5f*%%\n'),
+   ('Polygon',   re.compile(r'^%AD(D\d+)P,([^X]+)X([^*]+)\*%$'), '%%AD%sP,%.5fX%.5f*%%\n'),  # P,<Outer diameter>X<Number of vertices>[X<Rotation>[X<Hole diameter>]]
    ('Octagon',   re.compile(r'^%AD(D\d+)OC8,([^*]+)\*%$'),       '%%AD%sOC8,%.5f*%%\n'),     # Specific to Eagle
    ('Macro',     re.compile(r'^%AD(D\d+)([^*]+)\*%$'),           '%%AD%s%s*%%\n')
   )
