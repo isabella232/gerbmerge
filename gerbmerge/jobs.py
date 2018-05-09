@@ -632,13 +632,14 @@ class Job:
       print self.commands[layername]
 
   def parseExcellon(self, fullname):
-    excelonDigits = 0
+    excellonDecimals = 0
     if self.ExcellonDecimals > 0:
-        excelonDigits = self.ExcellonDecimals + 2
+        excellonDecimals = self.ExcellonDecimals
     else:    
-        excelonDigits = config.Config['excellondecimals'] + 2
+        excellonDecimals = config.Config['excellondecimals']
     
-    excellon = excellonParser.excellonParser(expectedDigits=excelonDigits, expectedUnits=config.Config['measurementunits'])
+    expectedExcellonFromat = excellonParser.ExcellonFormat(2, excellonDecimals, config.Config['measurementunits'], None)
+    excellon = excellonParser.excellonParser(expectedExcellonFromat)
     excellon.loadFile(fullname)
     self.xdiam = excellon.getxdiam()
     self.xcommands = excellon.getxcommands()
