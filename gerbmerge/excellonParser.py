@@ -458,7 +458,7 @@ class excellonParser:
             else:
                 tmp = (command.getCoorcinates()(0).x, command.getCoorcinates()(0).y, command.getCoorcinates()(1).x, command.getCoorcinates()(1).y)
                 
-            if command.tool in xcommands:
+            if command.tool.toDict()['tool'] in xcommands:
                 xcommands[command.tool.toDict()['tool']].append(tmp)
             else:
                 xcommands[command.tool.toDict()['tool']] = [tmp]
