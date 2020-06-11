@@ -263,6 +263,10 @@ def writeScoring(fid, Place, OriginX, OriginY, MaxXExtent, MaxYExtent):
   # about merging, etc.
   dx = config.Config['xspacing']/2.0
   dy = config.Config['yspacing']/2.0
+  if config.Config['measurementunits'] == 'inch':
+    mousebiteLen = 0.080
+  else:
+    mousebiteLen = 2
   extents = (OriginX, OriginY, MaxXExtent, MaxYExtent)
 
   Lines = []
@@ -278,16 +282,16 @@ def writeScoring(fid, Place, OriginX, OriginY, MaxXExtent, MaxYExtent):
     print "Crossing point XY: (" + str(X) + "," + str(Y) + ")"
     print "---"
     
-    #calculate mousebite location 
-    mousebiteX = layout.x + layout.width_in() / 2
-    mousebiteY = layout.y + layout.height_in() / 2
-    mousebiteLen = 0.080
-     
     # Just so we don't get 3.75000000004 and 3.75000000009, we round to
     # 2.5 limits.
     x,y,X,Y = [round(val,5) for val in [x,y,X,Y]]
 
-    if 1: # Scoring lines go all the way across the panel now
+    if config.Config['scoringtype'] == 'mousebite':
+      #calculate mousebite location
+      mousebiteX = layout.x + layout.width_in() / 2
+      mousebiteY = layout.y + layout.height_in() / 2
+
+      #Scoring lines with breaktabs
       addHorizontalLine(Lines, x, mousebiteX - mousebiteLen/2, Y, extents)   # above job
       addHorizontalLine(Lines, mousebiteX + mousebiteLen/2, X, Y, extents)   # above job
 
@@ -298,9 +302,9 @@ def writeScoring(fid, Place, OriginX, OriginY, MaxXExtent, MaxYExtent):
       addHorizontalLine(Lines, mousebiteX + mousebiteLen/2, X, y, extents)   # below job
 
       addVerticalLine(Lines, x, y, mousebiteY - mousebiteLen/2, extents)     # to the left of job
-      addVerticalLine(Lines, X, mousebiteY + mousebiteLen/2, Y, extents)     # to the left of job
+      addVerticalLine(Lines, x, mousebiteY + mousebiteLen/2, Y, extents)     # to the left of job
 
-    else:
+    elif config.Config['scoringtype'] == 'vgroove': # Scoring lines go all the way across the panel now
       addHorizontalLine(Lines, OriginX, MaxXExtent, Y, extents)   # above job
       addVerticalLine(Lines, X, OriginY, MaxYExtent, extents)     # to the right of job
       addHorizontalLine(Lines, OriginX, MaxXExtent, y, extents)   # below job

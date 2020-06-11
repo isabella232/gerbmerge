@@ -45,6 +45,7 @@ Config = {
    'excellonleadingzeros': 0,        # Generate leading zeros in merged Excellon output file
    'outlinelayerfile': None,         # Name of file to which to write simple box outline, or None
    'scoringfile': None,              # Name of file to which to write scoring data, or None
+   'scoringtype': None,              # Scoringmethod, vgroove, mousebite or None
    'leftmargin': 0,                  # Inches of extra room to leave on left side of panel for tooling
    'topmargin': 0,                   # Inches of extra room to leave on top side of panel for tooling
    'rightmargin': 0,                 # Inches of extra room to leave on right side of panel for tooling
