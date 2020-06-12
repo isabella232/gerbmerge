@@ -193,6 +193,9 @@ class Job:
     # How many times to replicate this job if using auto-placement
     self.Repeat = 1
 
+    # Try to rotate board for optimal placement efficiency
+    self.Rotate = True
+
     # How many decimal digits of precision there are in the Excellon file.
     # A value greater than 0 overrides the global ExcellonDecimals setting
     # for this file, allowing jobs with different Excellon decimal settings
@@ -1181,6 +1184,7 @@ def rotateJob(job, degrees = 90, firstpass = True):
   J.xdiam = job.xdiam
   J.ToolList = job.ToolList
   J.Repeat = job.Repeat
+  J.Rotate = job.Rotate
 
   # D-code translation table is the same, except we have to rotate
   # those apertures which have an orientation: rectangles, ovals, and macros.

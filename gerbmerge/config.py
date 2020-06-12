@@ -21,6 +21,7 @@ import string
 
 import jobs
 import aptable
+from distutils import util
 
 # Configuration dictionary. Specify floats as strings. Ints can be specified
 # as ints or strings.
@@ -375,6 +376,11 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
           J.Repeat = int(fname)
         except:
           raise RuntimeError, "Repeat count '%s' in config file is not a valid integer" % fname
+      elif layername=='rotate':
+        try:
+          J.Rotate = bool(util.strtobool(fname))
+        except:
+          raise RuntimeError, "Rotate value of '%s' in config file is not a valid boolean" % fname
 
     for layername in CP.options(jobname):
       fname = CP.get(jobname, layername)
