@@ -21,6 +21,7 @@ import string
 
 import jobs
 import aptable
+from distutils import util
 
 # Configuration dictionary. Specify floats as strings. Ints can be specified
 # as ints or strings.
@@ -45,6 +46,7 @@ Config = {
    'excellonleadingzeros': 0,        # Generate leading zeros in merged Excellon output file
    'outlinelayerfile': None,         # Name of file to which to write simple box outline, or None
    'scoringfile': None,              # Name of file to which to write scoring data, or None
+   'scoringtype': None,              # Scoringmethod, vgroove, mousebite or None
    'leftmargin': 0,                  # Inches of extra room to leave on left side of panel for tooling
    'topmargin': 0,                   # Inches of extra room to leave on top side of panel for tooling
    'rightmargin': 0,                 # Inches of extra room to leave on right side of panel for tooling
@@ -374,6 +376,11 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
           J.Repeat = int(fname)
         except:
           raise RuntimeError, "Repeat count '%s' in config file is not a valid integer" % fname
+      elif layername=='rotate':
+        try:
+          J.Rotate = bool(util.strtobool(fname))
+        except:
+          raise RuntimeError, "Rotate value of '%s' in config file is not a valid boolean" % fname
 
     for layername in CP.options(jobname):
       fname = CP.get(jobname, layername)

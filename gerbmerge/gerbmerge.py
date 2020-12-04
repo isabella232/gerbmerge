@@ -300,7 +300,12 @@ def tile_jobs(Jobs):
   for job in sortJobs:
     Xdim = job.width_in()
     Ydim = job.height_in()
-    rjob = jobs.rotateJob(job, 90)  ##NOTE: This will only try 90 degree rotations though 180 & 270 are available
+    if Xdim == Ydim or not job.Rotate:
+      ##NOTE: Never rotate square boards to save production cost
+      rjob = job
+    else:
+      ##NOTE: This will only try 90 degree rotations though 180 & 270 are available
+      rjob = jobs.rotateJob(job, 90)
 
     for count in range(job.Repeat):
       L.append( (Xdim,Ydim,job,rjob) )
