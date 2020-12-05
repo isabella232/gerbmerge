@@ -59,7 +59,7 @@ def clusterOrdinates(values):
       else:
         L.append(currCluster)
         currCluster = (val,)
-    
+
   if currCluster is not None:
     L.append(currCluster)
 
@@ -181,7 +181,7 @@ def mergeLines(Lines):
     # yval is the Y ordinate of this group of lines. lines is the set of all
     # lines with this Y ordinate.
     NewHLines[yval] = []
-    
+
     # Try to extend the first element of this list, which will be the leftmost.
     xline = lines[0]
     for line in lines[1:]:
@@ -203,7 +203,7 @@ def mergeLines(Lines):
     # xval is the X ordinate of this group of lines. lines is the set of all
     # lines with this X ordinate.
     NewVLines[xval] = []
-    
+
     # Try to extend the first element of this list, which will be the bottom-most.
     xline = lines[0]
     for line in lines[1:]:
@@ -275,13 +275,13 @@ def writeScoring(fid, Place, OriginX, OriginY, MaxXExtent, MaxYExtent):
     y = layout.y - dy
     X = layout.x + layout.width_in() + dx
     Y = layout.y + layout.height_in() + dy
-    
+
     print "Crossing point xy: (" + str(x) + "," + str(y) + ")"
     print "Crossing point xY: (" + str(x) + "," + str(Y) + ")"
     print "Crossing point Xy: (" + str(X) + "," + str(y) + ")"
     print "Crossing point XY: (" + str(X) + "," + str(Y) + ")"
     print "---"
-    
+
     # Just so we don't get 3.75000000004 and 3.75000000009, we round to
     # 2.5 limits.
     x,y,X,Y = [round(val,5) for val in [x,y,X,Y]]

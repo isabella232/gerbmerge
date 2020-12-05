@@ -55,7 +55,7 @@ def segmentXsegment1pt(p1, p2, q1, q2):
   C,D = p2
   P,Q = q1
   R,S = q2
-  
+
   # We have to consider special cases of one or other line segments being vertical
   if isSegmentVertical(p1,p2):
     if isSegmentVertical(q1,q2): return None
@@ -258,7 +258,7 @@ def intersectExtents(E1, E2):
 def isRect1InRect2(E1, E2):
   ll1, ul1, ur1, lr1, rect1 = canonicalizeExtents(E1)
   ll2, ul2, ur2, lr2, rect2 = canonicalizeExtents(E2)
-  
+
   return (ll1[0] >= ll2[0]) and (ll1[1] >= ll2[1]) \
      and (ur1[0] <= ur2[0]) and (ur1[1] <= ur2[1])
 

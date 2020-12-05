@@ -76,7 +76,7 @@ IgnoreList = ( \
   re.compile(r'^%TF.*\*%'),
   re.compile(r'^%TA.*\*%'),
   re.compile(r'^%TD.*\*%'),
-  
+
   # These additional ones are for Orcad Layout, PCB, Protel, etc.
   re.compile(r'\*'),            # Empty statement
   re.compile(r'^%IN.*\*%'),
@@ -174,7 +174,7 @@ class Job:
     # Excellon commands are grouped by tool number in a dictionary.
     # This is to help sorting all jobs and writing out all plunge
     # commands for a single tool.
-    # 
+    #
     # The key to this dictionary is the full tool name, e.g., T03 as a
     # string. Each command is an (X,Y,STOP_X,STOP_Y) integer tuple.
     # STOP_X and STOP_Y are not none only if this is a G85 command.
@@ -227,12 +227,12 @@ class Job:
 
   def mincoordinates(self):
     "Return minimum X and Y coordinate"
-    
+
     return self.minx, self.miny
 
   def fixcoordinates(self, x_shift, y_shift):
     "Add x_shift and y_shift to all coordinates in the job"
-    
+
     # Shift maximum and minimum coordinates
     self.minx += x_shift
     self.maxx += x_shift
@@ -241,11 +241,11 @@ class Job:
 
     # Shift all commands
     for layer, command in self.commands.iteritems():
-    
+
       # Loop through each command in each layer
       for index in range( len(command) ):
         c = command[index]
-        
+
         # Shift X and Y coordinate of command
         if type(c) == types.TupleType:                      ## ensure that command is of type tuple
           command_list = list(c)                            ## convert tuple to list
@@ -254,16 +254,16 @@ class Job:
             command_list[0] += x_shift
             command_list[1] += y_shift
           command[index] = tuple(command_list)              ## convert list back to tuple
-          
+
       self.commands[layer] = command                        ## set modified command
-     
+
     # Shift all excellon commands
     for tool, command in self.xcommands.iteritems():
-    
+
       # Loop through each command in each layer
       for index in range( len(command) ):
         c = command[index]
-        
+
         # Shift X and Y coordinate of command
         command_list = list(c)                              ## convert tuple to list
         if ( type( command_list[0] ) == types.IntType ) \
@@ -276,7 +276,7 @@ class Job:
             command_list[2] += x_shift / 10
             command_list[3] += y_shift / 10
         command[index] = tuple(command_list)                ## convert list back to tuple
-        
+
       self.xcommands[tool] = command                        ## set modified command
 
   def parseGerber(self, fullname, layername, updateExtents = 0):
@@ -348,7 +348,7 @@ class Job:
       if match:
         self.commands[layername].append(line)
         continue
-        
+
       # See if this is an aperture definition, and if so, map it.
       match = apdef_pat.match(line)
       if match:
@@ -388,7 +388,7 @@ class Job:
       if line[:3] == '%SF': # scale factor - we will ignore it
         print 'Scale factor parameter ignored: ' + line
         continue
-      
+
 # end basic diptrace fixes
 
       # See if this is an aperture macro definition, and if so, map it.
@@ -453,7 +453,7 @@ class Job:
                 fracpart = int(item[2])
                 y_div = 10.0**(3-fracpart)
                 #print "y_div= %5.3f." % y_div
-      
+
           continue
 
         # Parse and interpret G-codes
@@ -482,7 +482,7 @@ class Job:
               circ_signed = False
             elif gcode==75:
               circ_signed = True
-              
+
             continue
 
           raise RuntimeError, "G-Code 'G%02d' is not supported" % gcode
@@ -638,21 +638,21 @@ class Job:
     excellonDecimals = 0
     if self.ExcellonDecimals > 0:
         excellonDecimals = self.ExcellonDecimals
-    else:    
+    else:
         excellonDecimals = config.Config['excellondecimals']
-    
+
     expectedExcellonFromat = excellonParser.ExcellonFormat(2, excellonDecimals, config.Config['measurementunits'], None)
     excellon = excellonParser.excellonParser(expectedExcellonFromat)
     excellon.loadFile(fullname)
     self.xdiam = excellon.getxdiam()
     self.xcommands = excellon.getxcommands()
-    
+
   def hasLayer(self, layername):
     return self.commands.has_key(layername)
 
   def writeGerber(self, fid, layername, Xoff, Yoff):
     "Write out the data such that the lower-left corner of this job is at the given (X,Y) position, in inches"
-    
+
     # Maybe we don't have this layer
     if not self.hasLayer(layername): return
 
@@ -802,7 +802,7 @@ class Job:
       apdict = {}.fromkeys(self.apertures[layername])
       apmlist = [GAT[ap].dimx for ap in self.apertures[layername] if GAT[ap].apname=='Macro']
       apmdict = {}.fromkeys(apmlist)
-      
+
       return apdict, apmdict
     else:
       return {}, {}
@@ -856,7 +856,7 @@ class Job:
         #
         # For circular interpolation commands, it's definitely harder since
         # we have to construct arcs that are a subset of the original arc.
-        # 
+        #
         # For polygon fills, we similarly have to break up the polygon into
         # sub-polygons that are contained within the allowable extents.
         #
@@ -883,7 +883,7 @@ class Job:
 #                if config.Config['measurementunits'] == 'inch':
 #                  minFlash = 10;
 #                else
-#                  minFlash = 
+#                  minFlash =
                 if min(newRectWidth, newRectHeight) >= 10: # sdd - change for metric case at some point
                   # Construct an Aperture that is a Rectangle of dimensions (newRectWidth,newRectHeight)
                   newAP = aptable.Aperture(aptable.Rectangle, 'D??', \
@@ -1051,7 +1051,7 @@ class JobLayout:
 
 #if job has a boardoutline layer, write it, else calculate one
     outline_layer = 'boardoutline';
-    if self.job.hasLayer(outline_layer):     
+    if self.job.hasLayer(outline_layer):
       # somewhat of a hack here; making use of code in gerbmerge, around line 516,
       # we are going to replace the used of the existing draw code in the boardoutline
       # file with the one passed in (which was created from layout.cfg ('CutLineWidth')
@@ -1067,12 +1067,12 @@ class JobLayout:
           temp.append(x)        ## keep old command
       self.job.commands[outline_layer] = temp
 
-      #self.job.writeGerber(fid, outline_layer, X1, Y1)      
+      #self.job.writeGerber(fid, outline_layer, X1, Y1)
       self.writeGerber(fid, outline_layer)
-      
+
     else:
       radius = config.GAT[drawing_code].dimx/2.0
-      
+
       # Start at lower-left, proceed clockwise
       x = self.x - radius
       y = self.y - radius

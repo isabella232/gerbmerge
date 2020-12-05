@@ -57,7 +57,7 @@ PrimitiveParmTypes = (
   (int, float, float, float, float, float),         # Code 20 -- line (vector)...alias for code 2
   (int, float, float, float, float, float),         # Code 21 -- line (center)
   (int, float, float, float, float, float)          # Code 22 -- line (lower-left)
-)  
+)
 
 def rotatexy(x,y):
   # Rotate point (x,y) counterclockwise 90 degrees about the origin
@@ -144,7 +144,7 @@ class ApertureMacroPrimitive:
       except:
         raise RuntimeError, 'Aperture macro primitive parameter %d has incorrect type' % (parmix+1)
 
-  def setFromLine(self, line):      
+  def setFromLine(self, line):
     # Account for DOS line endings and get rid of line ending and '*' at the end
     line = line.replace('\x0D', '')
     line = line.rstrip()
@@ -205,7 +205,7 @@ class ApertureMacroPrimitive:
           format = ',%d'
       except:
         pass    # '%f' is OK for Outline extra points
-        
+
       s += format % self.parms[parmix]
 
     return s
@@ -217,7 +217,7 @@ class ApertureMacro:
   def __init__(self, name):
     self.name = name
     self.prim = []
-        
+
   def add(self, prim):
     self.prim.append(prim)
 

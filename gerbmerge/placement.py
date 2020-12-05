@@ -63,7 +63,7 @@ class Placement:
     """Read placement from a file, placed against jobs in Jobs list"""
     pat = re.compile(r'\s*(\S+)\s+(\S+)\s+(\S+)')
     comment = re.compile(r'\s*(?:#.+)?$')
-   
+
     try:
       fid = file(fname, 'rt')
     except:
@@ -90,7 +90,7 @@ class Placement:
         sys.exit(1)
 
       rotated = 0
-      if len(jobname) > 8:        
+      if len(jobname) > 8:
           if jobname[-8:] == '*rotated':
             rotated = 90
             jobname = jobname[:-8]

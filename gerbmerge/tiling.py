@@ -88,7 +88,7 @@ class Tiling:
     fid.write("Jobs:\n")
     for bl,tr,Job in self.jobs:
       fid.write("  %s: %s\n" % (str(Job), str(bl)))
-      
+
   def joblist(self, fid=sys.stdout):
     for bl,tr,Job in self.jobs:
       fid.write("%s@(%.1f,%.1f) " % (Job.name,bl[0],bl[1]))
@@ -97,13 +97,13 @@ class Tiling:
   def isOverlap(self, ix, X, Y, cfg=config.Config):
     """Determines if a new job with actual dimensions X-by-Y located at self.points[ix]
        overlaps any existing job or exceeds the boundaries of the panel.
-       
+
        If it's an L-point, the new job will have position
 
          p_bl=(self.points[ix][0],self.points[ix][1])
 
        and top-right co-ordinate:
-        
+
          p_tr=(self.points[ix][0]+X,self.points[ix][1]+Y)
 
        If it's a mirror-L point, the new job will have position
@@ -135,7 +135,7 @@ class Tiling:
       if p_bl[0]<t_tr[0] and p_tr[0]>t_bl[0] \
                          and                 \
          p_bl[1]<t_tr[1] and p_tr[1]>t_bl[1]:
-        return 1         
+        return 1
 
     return 0
 
@@ -161,7 +161,7 @@ class Tiling:
     return pts[ix-1][0]==pts[ix][0]      \
        and pts[ix-1][1]>pts[ix][1]       \
        and pts[ix+1][1]==pts[ix][1]      \
-       and pts[ix+1][0]>pts[ix][0]        
+       and pts[ix+1][0]>pts[ix][0]
 
   def isMirrorL(self, ix):
     """True if self.points[ix] represents a mirrored L-shaped corner where there
@@ -186,7 +186,7 @@ mirrored-L corner __  |      |
     return pts[ix-1][1]==pts[ix][1]       \
        and pts[ix-1][0]<pts[ix][0]        \
        and pts[ix+1][0]==pts[ix][0]       \
-       and pts[ix+1][1]>pts[ix][1]        
+       and pts[ix+1][1]>pts[ix][1]
 
   def validAddPoints(self, X, Y):
     """Return a list of all valid indices into self.points at which we can add
@@ -234,7 +234,7 @@ mirrored-L corner __  |      |
                                 |  |                                 |  |
                                 |  |                                 |  |
                                 +--+                                 +--+
-       
+
        that are too small for any job to fit in (as defined by minSize). These inlets
        can be deleted to form corners where new jobs can be placed.
     """
@@ -289,7 +289,7 @@ mirrored-L corner __  |      |
     y_tr = y+Y
     self.points[ix:ix+1] = [(x,y_tr), (x_tr,y_tr), (x_tr,y)]
     self.jobs.append( ((x,y),(x_tr,y_tr),Job) )
-        
+
     self.mergePoints(ix-1)
 
   def addMirrorLJob(self, ix, X, Y, Job, cfg=config.Config):
@@ -303,7 +303,7 @@ mirrored-L corner __  |      |
     y_tr = y+Y
     self.points[ix:ix+1] = [(x,y), (x,y_tr), (x_tr,y_tr)]
     self.jobs.append( ((x,y),(x_tr,y_tr),Job) )
-        
+
     self.mergePoints(ix-1)
 
   def addJob(self, ix, X, Y, Job):
@@ -357,7 +357,7 @@ def maxUtilization(Jobs):
     usedArea += job.jobarea()
     totalArea += job.jobarea()
     totalArea += job.width_in()*xspacing + job.height_in()*yspacing + xspacing*yspacing
-    
+
   # Reduce total area by strip of unused spacing around top and side. Assume
   # final result will be approximately square.
   sq_side = math.sqrt(totalArea)

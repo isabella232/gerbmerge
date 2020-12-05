@@ -27,14 +27,14 @@ def xln2tenthou(L, divisor, zeropadto, zeroSuppression):
           if zeroSuppression == 'trailing':
             s = s + '0'*(zeropadto-len(s))
             #s = s[:6]
-          
-          converted = int(round(int(s)*divisor))  
-          print s + ", converted = " + str(converted)            
+
+          converted = int(round(int(s)*divisor))
+          print s + ", converted = " + str(converted)
           V.append(converted)
         else:
           V.append(None)
       return tuple(V)
-      
+
 def xln2tenthou2 (L, divisor, zeropadto):
       V = []
       for s in L:
@@ -47,26 +47,26 @@ def xln2tenthou2 (L, divisor, zeropadto):
 #---------------------------------------------------------------------
 class ExcellonFormat:
     def __init__(self, integerPart, decimalPart, units, zeroSuppression):
-        self._asignValues(integerPart, decimalPart, units, zeroSuppression)        
+        self._asignValues(integerPart, decimalPart, units, zeroSuppression)
         self.validate()
-    
-    @staticmethod    
+
+    @staticmethod
     def _printNoneIfNeded(obj):
         if obj == None:
            return 'None'
         else:
            return obj
-              
-    def __str__(self):    
+
+    def __str__(self):
         return '\t' + str(self._printNoneIfNeded(self.integerPart)) + ':' + str(self._printNoneIfNeded(self.decimalPart)) + '\n\tUnits: ' + self._printNoneIfNeded(self.units) + '\n\tZero suppression: ' + self._printNoneIfNeded(self.zeroSuppression)
-        
+
     def toDict(self):
         return {'integerPart' : self.integerPart, 'decimalPart' : self.decimalPart, 'units' : self.units, 'zeroSuppression' : self.zeroSuppression}
 
-    @staticmethod    
+    @staticmethod
     def fromDict(dictionary):
-        return ExcellonFormat(dictionary['integerPart'], dictionary['decimalPart'], dictionary['units'], dictionary['zeroSuppression']) 
-        
+        return ExcellonFormat(dictionary['integerPart'], dictionary['decimalPart'], dictionary['units'], dictionary['zeroSuppression'])
+
     def _asignValues(self, integer, decimals, units, zeroSuppression):
         self.integerPart = integer
         self.decimalPart = decimals
@@ -81,7 +81,7 @@ class ExcellonFormat:
             raise "Unsupported zero suppression option: " + str(self.zeroSuppression)
         if self.units not in possibleUnits:
             raise "Unsupported units option: " + str(self.units)
-        
+
     def isEqual(self, excellonFormat):
         if self.integerPart != excellonFormat.digits:
             return False
@@ -91,8 +91,8 @@ class ExcellonFormat:
             return False
         if self.zeroSuppression != excellonFormat.zeroSuppression:
             return False
-        return True 
-        
+        return True
+
     def isEqualSkipNone(self, excellonFormat):
         if self.integerPart != None and excellonFormat.integerPart != None and self.integerPart != excellonFormat.integerPart:
             return False
@@ -102,8 +102,8 @@ class ExcellonFormat:
             return False
         if self.zeroSuppression != None and excellonFormat.zeroSuppression != None and self.zeroSuppression != excellonFormat.zeroSuppression:
             return False
-        return True 
-    
+        return True
+
     def fillNoneFields(self, excellonFormat):
         if self.integerPart == None:
             self.integerPart = excellonFormat.integerPart
@@ -113,7 +113,7 @@ class ExcellonFormat:
             self.units = excellonFormat.units
         if self.zeroSuppression == None:
             self.zeroSuppression = excellonFormat.zeroSuppression
-            
+
     def getDigits(self):
         return self.integerPart + self.decimalPart
 
@@ -122,24 +122,24 @@ class Coordinates:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        
+
     def __repr__(self):
         return json.dumps(self.toDict())
-        
+
     def toDict(self):
         return {'x' : self.x, 'y' : self.y}
-    
+
     @staticmethod
     def fromDict(dictionary):
         return Coordinates(dictionary['x'], dictionary['y'])
-        
+
 #---------------------------------------------------------------------
 # Abstract class that is representing excellon command, specific comand should implement this interface
 class Command:
     @staticmethod
     def fromString(string, excellonFormat):
         'This function should return Command object if it can be paresed from provided string or None'
-        raise NotImplementedError("Subclass must implement abstract method")   
+        raise NotImplementedError("Subclass must implement abstract method")
     def toString(self, excelonFormat):
         raise NotImplementedError("Subclass must implement abstract method")
     @staticmethod
@@ -152,10 +152,10 @@ class PlungeCommand(Command):
     def __init__(self, coordinates, tool=None):
         self.coordinates = coordinates
         self.tool = tool
-    
+
     def __repr__(self):
         return json.dumps(self.toDict())
-        
+
     @staticmethod
     def fromString(string, excelonFormat, lastCoordinates, divisor):
         xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)(?:G85X([+-]?\d+)Y([+-]?\d+))?$')    # Plunge command with optional G85
@@ -164,7 +164,7 @@ class PlungeCommand(Command):
         ydraw_pat = re.compile(r'^Y([+-]?\d+)$')    # Plunge command, repeat last X value
         match = xydraw_pat.match(string)
         if match:
-            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.getDigits(), excelonFormat.zeroSuppression)       
+            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.getDigits(), excelonFormat.zeroSuppression)
             return PlungeCommand(Coordinates(x, y))
         match = xydraw_pat2.match(string)
         if match:
@@ -178,11 +178,11 @@ class PlungeCommand(Command):
         if match:
             y = xln2tenthou(match.groups(),divisor, excelonFormat.getDigits(), excelonFormat.zeroSuppression)[0]
             return PlungeCommand(Coordinates(lastCoordinates.x, y))
-        return None           
-        
+        return None
+
     def toString(self, excelonFormat):
         return
-        
+
     def toDict(self):
         return {'command' : 'Plunge','tool' : self.tool, 'coordinates' : self.coordinates.toDict()}
 
@@ -191,7 +191,7 @@ class PlungeCommand(Command):
         return PlungeCommand(Coordinates.fromDict(dictionary['coordinates']), dictionary['tool'])
 
     def getCoordinates(self):
-        return self.coordinates          
+        return self.coordinates
 
 #---------------------------------------------------------------------
 class SlotCommand(Command):
@@ -199,46 +199,46 @@ class SlotCommand(Command):
         self.startCoordinates = startCoordinates
         self.endCoordinates = endCoordinates
         self.tool = tool
-        
+
     @staticmethod
     def fromString(string, excellonFormat, divisor):
         xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)(?:G85X([+-]?\d+)Y([+-]?\d+))?$')    # Plunge command with optional G85
         xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)(?:G85X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*))?$')    # Plunge command with optional G85
         match = xydraw_pat.match(string)
         if match:
-            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.digits, excelonFormat.zeroSuppression)       
+            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.digits, excelonFormat.zeroSuppression)
             return SlotCommand(Coordinates(x, y), Coordinates(stop_x, stop_y))
         match = xydraw_pat2.match(string)
         if match:
             x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.digits)
             return SlotCommand(Coordinates(x, y), Coordinates(stop_x, stop_y))
         return None
-        
+
    # def toString(self, excellonFormat):
    #     return ''
-   
+
     def toDict(self):
         return {'command' : 'Slot', 'startCoordinates' : self.startCoordinates, 'endCoordinates' : self.endCoordinates, 'tool' : self.tool}
-        
+
     def getCoordinates(self):
-        return (self.startCoordinates, self.endCoordinates)            
+        return (self.startCoordinates, self.endCoordinates)
 #---------------------------------------------------------------------
 class Tool:
     def __init__(self, number, diameter):
         self.number = number # T#
-        self.diameter = diameter # C#        
+        self.diameter = diameter # C#
         self.zAxisFeedRate = None # optional, F#
-        self.zAxisRetractRate = None # optional, B# 
+        self.zAxisRetractRate = None # optional, B#
         self.rotationSpeed = None # optional, S#
 
-    @staticmethod    
+    @staticmethod
     def fromString(string, filename):
         # Patterns for Excellon interpretation
         xtdef_pat = re.compile(r'^(T\d+)(?:F\d+)?(?:S\d+)?C([0-9.]+)$') # Tool+diameter definition with optional
                                                                 # feed/speed (for Protel)
         xtdef2_pat = re.compile(r'^(T\d+)C([0-9.]+)(?:F\d+)?(?:S\d+)?$') # Tool+diameter definition with optional
                                                                 # feed/speed at the end (for OrCAD)
-                                                                
+
         # See if a tool is being defined. First try to match with tool name+size
         matchA = xtdef_pat.match(string)    # xtdef_pat and xtdef2_pat expect tool name and diameter
         matchB = xtdef2_pat.match(string) # and xtdef_2pat expects feed/speed at the end
@@ -248,7 +248,7 @@ class Tool:
             match = matchA
         else:
             match = matchB
-                  
+
         currtool, diam = match.groups()
         try:
             diam = float(diam)
@@ -258,10 +258,10 @@ class Tool:
         # Canonicalize tool number because Protel (of course) sometimes specifies it
         # as T01 and sometimes as T1. We canonicalize to T01.
         currtool = 'T%02d' % int(currtool[1:])
-        return Tool(currtool, diam)   
-       
+        return Tool(currtool, diam)
+
     def toDict(self):
-        return {'tool' : self.number, 'diam' : self.diameter}    
+        return {'tool' : self.number, 'diam' : self.diameter}
 #---------------------------------------------------------------------
 class ToolchangeCommand:
     def __init__(self, toolnumber):
@@ -273,7 +273,7 @@ class ToolchangeCommand:
             return ToolchangeCommand(int(match.group()[1:]))
         return None
     def toString(self):
-        return 'T%02d' % self.tool          
+        return 'T%02d' % self.tool
 
 #---------------------------------------------------------------------
 class excellonParser:
@@ -283,41 +283,41 @@ class excellonParser:
         self.excellonFormatFromHeader = ExcellonFormat(integerPart=None, decimalPart=None, units=None, zeroSuppression=None)
         self.toolList = []
         self.commands = []
- 
+
     def spliteFile(self, fileContent):
         headerEnd = ["%", "M95"]
 
         header = ""
         content = ""
-        footer = ""    
+        footer = ""
         headerBeginFound = False
-        
+
         for line in fileContent.xreadlines():
-            line = line.strip()            
+            line = line.strip()
             header = header + line + "\n"
             if line == "M48":
                 headerBeginFound = True
             if headerBeginFound and line in headerEnd:
                 break
-                
+
         for line in fileContent.xreadlines():
             line = line.strip()
             content = content + line + "\n"
-                            
+
         return header, content, footer
- 
+
     def parseHeader(self, header, filename):
         unitAndZerosPosition = re.compile(r'^(INCH|METRIC),((?:[LT])Z)?$')      # Leading/trailing zeros INCLUDED
         fileFormat = re.compile(r';FILE_FORMAT=(\d):(\d)')
         plating = re.compile(r';TYPE=(.+)')
-        
-        currtool = None        
+
+        currtool = None
         for line in header.splitlines():
             line = line.strip()
             # Check for measurement unit and for leading/trailing zeros included ("INCH,LZ" or "INCH,TZ" or "METRIC,LZ" or "METRIC,TZ")
             match = unitAndZerosPosition.match(line)
             if match:
-                unit, zerosPosition = match.groups()         
+                unit, zerosPosition = match.groups()
                 if unit == "INCH":
                     self.excellonFormatFromHeader.units = 'inch'
                 elif unit == "METRIC":
@@ -334,16 +334,16 @@ class excellonParser:
 
             match = fileFormat.match(line)
             if match:
-                numbersStr, decimalsStr = match.groups()    
+                numbersStr, decimalsStr = match.groups()
                 print numbersStr + ':' + decimalsStr
                 self.excellonFormatFromHeader.integerPart = int(numbersStr)
                 self.excellonFormatFromHeader.decimalPart = int(decimalsStr)
-            
+
             match = plating.match(line)
             if match:
                 platingOption = match.group(1)
-                print platingOption  
-                
+                print platingOption
+
             tool = Tool.fromString(line, filename)
             if tool:
                 if tool in self.toolList:
@@ -366,10 +366,10 @@ class excellonParser:
             else:
                 try:
                     diam = config.DefaultToolList[tool]
-                except:                    
+                except:
                     raise RuntimeError, "File %s uses tool code %s that is not defined in default tool list" % (filename, tool)
         return diam
-        
+
     def getToolFromToolList(self, toolnumber):
         for tool in self.toolList:
             if tool.number == toolnumber:
@@ -381,20 +381,20 @@ class excellonParser:
         divisor = 10.0**(4 - (excellonFormat.decimalPart))
         lastCoordinates = None
         currtool = None
-        
+
         for line in content.splitlines():
             toolCommand = ToolchangeCommand.fromString(line)
-            if toolCommand:         
-                if toolCommand.toString() != 'T00': # KiCad specific fixes, tool T00 is KiCad specific                    
+            if toolCommand:
+                if toolCommand.toString() != 'T00': # KiCad specific fixes, tool T00 is KiCad specific
                     currtool = self.getToolFromToolList(toolCommand.toString())
                 continue
-                
+
             command = PlungeCommand.fromString(line, excellonFormat, lastCoordinates, divisor)
             if command:
-                lastCoordinates = command.getCoordinates()                
+                lastCoordinates = command.getCoordinates()
                 if currtool is None:
                     raise RuntimeError, 'File %s has plunge command without previous tool selection' % filename
-                command.tool = currtool    
+                command.tool = currtool
                 self.commands.append(command)
                 continue
 
@@ -402,9 +402,9 @@ class excellonParser:
             if slotCommand:
                 if currtool is None:
                     raise RuntimeError, 'File %s has plunge command without previous tool selection' % filename
-                slotCommand.tool = currtool                        
-                self.commands.append(slotCommand)    
-                continue                
+                slotCommand.tool = currtool
+                self.commands.append(slotCommand)
+                continue
 
             # It had better be an ignorable
             for pat in XIgnoreList:
@@ -412,11 +412,11 @@ class excellonParser:
                     break
             else:
                 raise RuntimeError, 'File %s has uninterpretable line:\n  %s' % (filename, line)
-                 
+
     def loadFile(self, filename):
         print 'Reading data from %s ...' % filename
         fileContent = file(filename, 'rt')
-        header, content, footer = self.spliteFile(fileContent)        
+        header, content, footer = self.spliteFile(fileContent)
         self.parseHeader(header, filename)
         self.excellonFormatFromHeader.fillNoneFields(self.expectedExcellonFormat)
         if self.expectedExcellonFormat.isEqualSkipNone(self.excellonFormatFromHeader) == False:
@@ -425,7 +425,7 @@ class excellonParser:
             print "But form header data decoded excellon fotmat:"
             print self.excellonFormatFromHeader
             raise RuntimeError, "Mismatch in excellon format configuration."
-                    
+
         self.parseContent(content, filename)
 
     def toJsonFile(self, filename):
@@ -433,7 +433,7 @@ class excellonParser:
         commandsList = []
         for command in self.commands:
             commandsList.append(command.toDict())
-        
+
         fileContent = {'OryginalFileFormat': self.excellonFormatFromHeader.toDict(), 'ToolList': self.toolList, 'Commands': commandsList }
         with open(filename, 'w') as outfile:
             outfile.write(json.dumps(fileContent, indent=4, sort_keys=True, separators=(',', ': ')))
@@ -441,33 +441,33 @@ class excellonParser:
     #deprecated functin should be removed when other part of gerbmerge will be changed
     def getToollist(self):
         return None
-    
-    #deprecated functin should be removed when other part of gerbmerge will be changed    
-    def getxdiam(self):  
+
+    #deprecated functin should be removed when other part of gerbmerge will be changed
+    def getxdiam(self):
         xdiam = {}
         for tool in self.toolList:
-            xdiam[tool.toDict()['tool']] = tool.toDict()['diam']              
+            xdiam[tool.toDict()['tool']] = tool.toDict()['diam']
         return xdiam
 
-    #deprecated functin should be removed when other part of gerbmerge will be changed        
+    #deprecated functin should be removed when other part of gerbmerge will be changed
     def getxcommands(self):
         xcommands = {}
         for command in self.commands:
             if isinstance(command, PlungeCommand):
-                tmp = (command.getCoordinates().x, command.getCoordinates().y, None, None)                                
+                tmp = (command.getCoordinates().x, command.getCoordinates().y, None, None)
             else:
                 tmp = (command.getCoorcinates()(0).x, command.getCoorcinates()(0).y, command.getCoorcinates()(1).x, command.getCoorcinates()(1).y)
-                
+
             if command.tool.toDict()['tool'] in xcommands:
                 xcommands[command.tool.toDict()['tool']].append(tmp)
             else:
                 xcommands[command.tool.toDict()['tool']] = [tmp]
         return xcommands
-               
- 
-        
 
-def main(): 
+
+
+
+def main():
     import argparse
     import datetime
     scriptStartTime = datetime.datetime.now()
@@ -477,9 +477,9 @@ def main():
     parser.add_argument("-d", "--digits", help="Digit format used in file, possible values: 2:4, 2:5, etc.")
     parser.add_argument("-s", "--zeroSuppression", help="Kind of zerro suppresion used in file, possible options: leading, trailing")
     args = parser.parse_args()
-    
+
     excellonFormatFromArguments = ExcellonFormat(integerPart=2, decimalPart=5, units=args.units, zeroSuppression=args.zeroSuppression)
-    p = excellonParser(expectedExcellonFormat=excellonFormatFromArguments) 
+    p = excellonParser(expectedExcellonFormat=excellonFormatFromArguments)
     p.loadFile(args.file)
    # p.parseExcellon('test.txt')
     p.toJsonFile('test.json')

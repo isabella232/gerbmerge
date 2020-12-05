@@ -51,15 +51,15 @@ def printTilingStats():
 
   if gerbmerge.GUI is not None:
     sys.stdout.flush()
-  
+
 def bestTiling():
   return _TBestTiling
 
 def _tile_search1(Jobs, TSoFar, firstAddPoint, cfg=config.Config):
   """This recursive function does the following with an existing tiling TSoFar:
-     
+
      * For each 4-tuple (Xdim,Ydim,job,rjob) in Jobs, the non-rotated 'job' is selected
-     
+
      * For the non-rotated job, the list of valid add-points is found
 
      * For each valid add-point, the job is placed at this point in a new,
@@ -175,13 +175,13 @@ def _tile_search1(Jobs, TSoFar, firstAddPoint, cfg=config.Config):
     # If we've been at this for 3 seconds, print some status information
     if _PrintStats and time.time() > _CkpointTime:
       printTilingStats()
-      
+
       # Check for timeout - changed to file config
       if (config.Config['searchtimeout'] > 0) and ((time.time() - _StartTime) > config.Config['searchtimeout']):
-        raise KeyboardInterrupt 
-        
-    gerbmerge.updateGUI("Performing automatic layout...")        
-        
+        raise KeyboardInterrupt
+
+    gerbmerge.updateGUI("Performing automatic layout...")
+
   # end for each job in job list
 
 def factorial(N):

@@ -60,7 +60,7 @@ def _tile_search2(Jobs, X, Y, cfg=config.Config):
 
   xspacing = cfg['xspacing']
   yspacing = cfg['yspacing']
-  
+
   # Must escape with Ctrl-C
   while 1:
     T = tiling.Tiling(X,Y)
@@ -70,7 +70,7 @@ def _tile_search2(Jobs, X, Y, cfg=config.Config):
 
     for ix in joborder[:M]:
       Xdim,Ydim,job,rjob = Jobs[ix]
-      
+
       T.removeInlets(minInletSize)
 
       if r.choice([0,1]):
@@ -108,17 +108,17 @@ def _tile_search2(Jobs, X, Y, cfg=config.Config):
             _TBestTiling,_TBestScore = T,score
 
     _Placements += 1
-      
+
     # If we've been at this for 3 seconds, print some status information
     if time.time() > _CkpointTime:
       printTilingStats()
-      
+
       # Check for timeout - changed to file config
       if (config.Config['searchtimeout'] > 0) and ((time.time() - _StartTime) > config.Config['searchtimeout']):
-        raise KeyboardInterrupt 
-        
+        raise KeyboardInterrupt
+
     gerbmerge.updateGUI("Performing automatic layout...")
-  
+
   # end while 1
 
 def tile_search2(Jobs, X, Y):
@@ -138,7 +138,7 @@ def tile_search2(Jobs, X, Y):
     print "for the automatic timeout in %i seconds." % config.Config['searchtimeout']
   else:
     print "Starting random placement trials. You must press Ctrl-C to"
-    print "stop the process and use the best placement so far." 
+    print "stop the process and use the best placement so far."
     print "You can specify a timeout by setting 'SearchTimeout' in  Layout.cfg"
   print "Estimated maximum possible utilization is %.1f%%." % (tiling.maxUtilization(Jobs)*100)
 

@@ -36,7 +36,7 @@ if sys.platform == 'win32' or ('bdist_wininst' in sys.argv):
   DestDir = os.path.join(DestLib, 'gerbmerge')
   BinFiles = ['misc/gerbmerge.bat']
   BinDir = '.'
-  
+
   # Create top-level invocation program
   if not os.path.exists('misc'):
     os.makedirs('misc')
@@ -52,7 +52,7 @@ else:
   DestLib = distutils.sysconfig.get_python_lib()
   DestDir = os.path.join(DestLib, 'gerbmerge')
   BinFiles = ['misc/gerbmerge']
-  BinDir = distutils.sysconfig.get_config_var('BINDIR')  
+  BinDir = distutils.sysconfig.get_config_var('BINDIR')
 
   # Create top-level invocation program
   if not os.path.exists('misc'):
@@ -88,7 +88,7 @@ URL below.
        url = "https://github.com/unwireddevices/gerbmerge",
        packages = ['gerbmerge'],
        platforms = ['all'],
-       data_files = [ (DestDir, AuxFiles), 
+       data_files = [ (DestDir, AuxFiles),
                       (os.path.join(DestDir,'testdata'), SampleFiles),
                       (os.path.join(DestDir,'doc'), DocFiles),
                       (BinDir, BinFiles) ],
@@ -126,7 +126,7 @@ if do_fix_perms:
     print
     print '*** Please verify that the installed files have correct permissions. On'
     print "*** systems without permission flags, you don't need to"
-    print '*** worry about it.' 
+    print '*** worry about it.'
 
 if sys.platform != "win32":
   if cmd[:7]=='install':

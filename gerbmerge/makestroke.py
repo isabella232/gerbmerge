@@ -34,7 +34,7 @@ FacingUp=3    # 270 degrees
 
 SpacingDX = 10*int(round(strokes.MaxWidth*SpacingX))
 SpacingDY = 10*int(round(strokes.MaxHeight*SpacingY))
-  
+
 RotatedGlyphs={}
 
 # Default arrow glyph is at 0 degrees rotation, facing left
@@ -79,7 +79,7 @@ def drawPolyline(fid, L, offX, offY, scale=1):
       writeFlash(fid, X+offX, Y+offY, 2)
     else:
       writeFlash(fid, X+offX, Y+offY, 1)
-    
+
 def writeGlyph(fid, glyph, X, Y, degrees, glyphName=None):
   if not glyphName:
     glyphName = str(glyph)
@@ -87,7 +87,7 @@ def writeGlyph(fid, glyph, X, Y, degrees, glyphName=None):
   for path in rotateGlyph(glyph, degrees, glyphName):
     drawPolyline(fid, path, X, Y, 10)
 
-def writeChar(fid, c, X, Y, degrees):  
+def writeChar(fid, c, X, Y, degrees):
   if c==' ': return
 
   try:
@@ -124,14 +124,14 @@ def boundingBox(s, X1, Y1):
   "Return (X1,Y1),(X2,Y2) for given string"
   if not s:
     return (X1, Y1), (X1, Y1)
-    
+
   X2 = X1 + (len(s)-1)*SpacingDX + 10*strokes.MaxWidth
   Y2 = Y1 + 10*strokes.MaxHeight  # Not including descenders
   return (X1, Y1), (X2, Y2)
 
 def drawDimensionArrow(fid, X, Y, facing):
   writeGlyph(fid, ArrowGlyph, X, Y, facing*90, "Arrow")
-  
+
 def drawDrillHit(fid, X, Y, toolNum):
   writeGlyph(fid, strokes.DrillStrokeList[toolNum], X, Y, 0, "Drill%02d" % toolNum)
 

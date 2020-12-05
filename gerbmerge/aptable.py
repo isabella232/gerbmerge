@@ -53,7 +53,7 @@ class Aperture:
 
     if self.apname in ('Circle', 'Octagon', 'Macro'):
       assert (dimy is None)
-        
+
   def isRectangle(self):
     return self.apname == 'Rectangle'
 
@@ -76,20 +76,20 @@ class Aperture:
       ym = yp = dy/2
 
     return (X-xm, Y-ym, X+xp, Y+yp)
-    
+
   def getAdjusted(self, minimum):
     """
       Adjust aperture properties to conform to minimum feature dimensions
       Return new aperture if required, else return False
     """
     dimx = dimy = None
-   
+
     # Check for X and Y dimensions less than minimum
     if (self.dimx != None) and (self.dimx < minimum):
         dimx = minimum
     if (self.dimy != None) and (self.dimx < minimum):
-        dimy = minimum   
-    
+        dimy = minimum
+
     # Return new aperture if needed
     if (dimx != None) or (dimy != None):
       if dimx==None: dimx=self.dimx
@@ -296,7 +296,7 @@ def addToApertureTable(AP):
   AP.code = code
 
   return code
-  
+
 def findInApertureTable(AP):
   """Return 'D10', for example in response to query for an object
      of type Aperture()"""

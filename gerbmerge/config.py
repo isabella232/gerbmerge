@@ -101,7 +101,7 @@ TrimGerber = 1
 TrimExcellon = 1
 
 # This configuration option determines the minimum size of feature dimensions for
-# each layer. It is a dictionary indexed by layer name (e.g. '*topsilkscreen') and 
+# each layer. It is a dictionary indexed by layer name (e.g. '*topsilkscreen') and
 # has a floating point number as the value (in inches).
 MinimumFeatureDimension = {}
 
@@ -150,7 +150,7 @@ def parseStringList(L):
 #
 #   T01 0.035in
 #   T02 0.042in
-def parseToolList(fname):  
+def parseToolList(fname):
   TL = {}
 
   try:
@@ -187,7 +187,7 @@ def parseToolList(fname):
 
     if mil:
       size = size*0.001  # Convert mil to inches
-    elif mm:    
+    elif mm:
       size = size/25.4   # Convert mm to inches
 
     # Canonicalize tool so that T1 becomes T01
@@ -263,7 +263,7 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     Config['cutlinelayers'] = parseStringList(Config['cutlinelayers'])
   if Config['cropmarklayers']:
     Config['cropmarklayers'] = parseStringList(Config['cropmarklayers'])
-    
+
 # setup default x & y spacing, taking into account metric units
 #    if (xspacing == 0):
 #      if (Config['measurementunits'] == 'inch'):
@@ -305,7 +305,7 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     # Ensure all jobs have a board outline
     if not CP.has_option(jobname, 'boardoutline'):
       raise RuntimeError, "Job '%s' does not have a board outline specified" % jobname
-    
+
     if not CP.has_option(jobname, 'drills'):
       raise RuntimeError, "Job '%s' does not have a drills layer specified" % jobname
 

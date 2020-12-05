@@ -3,10 +3,10 @@
 Parse the job layout specification file.
 
 Requires:
-  
+
   - SimpleParse 2.1 or higher
               http://simpleparse.sourceforge.net
-              
+
 
 --------------------------------------------------------------------
 
@@ -94,7 +94,7 @@ class Panel:                 # Meant to be subclassed as either a Row() or Col()
   def writeGerber(self, fid, layername):
     for job in self.jobs:
       job.writeGerber(fid, layername)
-    
+
   def writeExcellon(self, fid, tool):
     for job in self.jobs:
       job.writeExcellon(fid, tool)
@@ -106,7 +106,7 @@ class Panel:                 # Meant to be subclassed as either a Row() or Col()
   def writeCutLines(self, fid, drawing_code, X1, Y1, X2, Y2):
     for job in self.jobs:
       job.writeCutLines(fid, drawing_code, X1, Y1, X2, Y2)
-    
+
   def drillhits(self, tool):
     hits = 0
     for job in self.jobs:
@@ -162,14 +162,14 @@ def canonicalizePanel(panel):
   for job in panel:
     L = L + job.canonicalize()
   return L
-  
+
 def findJob(jobname, rotated, Jobs=config.Jobs):
   """
     Find a job in config.Jobs, possibly rotating it
     If job not in config.Jobs add it for future reference
     Return found job
   """
-                                                                                    
+
   if rotated == 90:
     fullname = jobname + '*rotated90'
   elif rotated == 180:
@@ -178,18 +178,18 @@ def findJob(jobname, rotated, Jobs=config.Jobs):
     fullname = jobname + '*rotated270'
   else:
     fullname = jobname
-                         
+
   try:
     for existingjob in Jobs.keys():
       if existingjob.lower() == fullname.lower(): ## job names are case insensitive
-        job = Jobs[existingjob]                 
+        job = Jobs[existingjob]
         return jobs.JobLayout(job)
   except:
     pass
 
   # Perhaps we just don't have a rotated job yet
   if rotated:
-    try:      
+    try:
       for existingjob in Jobs.keys():
         if existingjob.lower() == jobname.lower(): ## job names are case insensitive
           job = Jobs[existingjob]
@@ -216,7 +216,7 @@ def parseJobSpec(spec, data):
       if len(jobspec[3]) > 1:
         rotationfield = jobspec[3][1]
         rotation = data[ rotationfield[1] + 1: rotationfield[2] ]
-                
+
         if (rotation == "Rotate") or (rotation == "Rotate90"):
             rotated = 90
         elif rotation == "Rotate180":
@@ -242,7 +242,7 @@ def parseColSpec(spec, data):
     assert coljob[0] == 'coljob'
     job = coljob[3][0]
     if job[0] in ('commentline','nullline'): continue
-    
+
     assert job[0] in ('jobspec','rowspec')
     if job[0] == 'jobspec':
       jobs.addjob(parseJobSpec(job[3],data))
@@ -260,7 +260,7 @@ def parseRowSpec(spec, data):
     assert rowjob[0] == 'rowjob'
     job = rowjob[3][0]
     if job[0] in ('commentline','nullline'): continue
-    
+
     assert job[0] in ('jobspec','colspec')
     if job[0] == 'jobspec':
       jobs.addjob(parseJobSpec(job[3],data))
@@ -283,14 +283,14 @@ def parseLayoutFile(fname):
      Each column consists of a list of either jobs or rows.
      These are recursive, so it can look like:
 
-        [ 
+        [
           Row([JobLayout(), Col([ Row([JobLayout(), JobLayout()]),
                                      JobLayout()       ]),         JobLayout() ]),   # That was row 0
           Row([JobLayout(), JobLayout()])                                            # That was row 1
         ]
 
      This is a panel with two rows. In the first row there is
-     a job, a column, and another job, from left to right. In the 
+     a job, a column, and another job, from left to right. In the
      second row there are two jobs, from left to right.
 
      The column in the first row has two jobs side by side, then

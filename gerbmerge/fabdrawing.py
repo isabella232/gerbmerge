@@ -16,8 +16,8 @@ import config
 import makestroke
 import util
 
-def writeDrillHits(fid, Place, Tools):  
-  toolNumber = -1 
+def writeDrillHits(fid, Place, Tools):
+  toolNumber = -1
 
   for tool in Tools:
     toolNumber += 1
