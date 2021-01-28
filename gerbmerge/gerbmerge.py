@@ -172,6 +172,7 @@ def writeExcellonHeader(fid):
     fid.write("INCH,%s\n" % zerosDef)
   else: # metric - mm
     fid.write("METRIC,%s\n" % zerosDef)
+def writeExcellonHeaderEnd(fid):  
   fid.write('%\n')
 
 def writeExcellonFooter(fid):
@@ -179,6 +180,9 @@ def writeExcellonFooter(fid):
 
 def writeExcellonTool(fid, tool, size):
   fid.write('%sC%f\n' % (tool, size))
+
+def writeExcellonToolSelection(fid, tool, size):
+  fid.write('%s\n' % (tool))
 
 def writeFiducials(fid, drawcode, OriginX, OriginY, MaxXExtent, MaxYExtent):
   """Place fiducials at arbitrary points. The FiducialPoints list in the config specifies
@@ -706,9 +710,13 @@ def merge(opts, args, gui = None):
       size = config.GlobalToolMap[tool]
     except:
       raise RuntimeError, "INTERNAL ERROR: Tool code %s not found in global tool map" % tool
-      
     writeExcellonTool(fid, tool, size)
 
+  writeExcellonHeaderEnd(fid)
+
+  for tool in Tools:
+    size = config.GlobalToolMap[tool]
+    writeExcellonToolSelection(fid, tool, size)
     #for row in Layout:
     #  row.writeExcellon(fid, size)
     for job in Place.jobs:
