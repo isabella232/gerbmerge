@@ -80,7 +80,7 @@ IgnoreList = ( \
   re.compile(r'\*'),            # Empty statement
   re.compile(r'^%IN.*\*%'),
   re.compile(r'^%ICAS\*%'),      # Not in RS274X spec.
-  re.compile(r'^%MOIN\*%'),
+  #re.compile(r'^%MOIN\*%'),     # [andreika]: don't ignore
   re.compile(r'^%ASAXBY\*%'),
   re.compile(r'^%AD\*%'),        # GerbTool empty aperture definition
   re.compile(r'^%LN.*\*%')       # Layer name
@@ -294,6 +294,9 @@ class Job:
     x_div = 1.0
     y_div = 1.0
 
+    # [andreika]: use local units conversion
+    units_div = 1.0
+
     # Drawing commands can be repeated with X or Y omitted if they are
     # the same as before. These variables store the last X/Y value as
     # integers in hundred-thousandths of an inch.
@@ -346,6 +349,11 @@ class Job:
         A = aptable.parseAperture(line, self.apmxlat[layername])
         if not A:
           raise RuntimeError, "Unknown aperture definition in file %s" % fullname
+        # [andreika]: apply units
+        if type(A.dimx) == float or type(A.dimx) == int:
+          A.dimx *= units_div
+        if type(A.dimy) == float or type(A.dimy) == int:
+          A.dimy *= units_div
 
         hash = A.hash()
         if not RevGAT.has_key(hash):
@@ -367,10 +375,20 @@ class Job:
 # DipTrace specific fixes, but could be emitted by any CAD program. They are Standard Gerber RS-274X
       # a hack to fix lack of recognition for metric direction from DipTrace - %MOMM*%
       if (line[:7] == '%MOMM*%'):
+        # [andreika]: just set units to mm, no error
         if (config.Config['measurementunits'] == 'inch'):
-          raise RuntimeError, "File %s units do match config file" % fullname
+          #raise RuntimeError, "File %s units do match config file" % fullname
+          units_div = 1.0 / 25.4
+          continue
         else:
         #print "ignoring metric directive: " + line
+          continue # ignore it so func doesn't choke on it
+      # [andreika]: add reciprocal conversion
+      if (line[:7] == '%MOIN*%'):
+        if (config.Config['measurementunits'] == 'mm'):
+          units_div = 25.4
+          continue
+        else:
           continue # ignore it so func doesn't choke on it
 
       if line[:3] == '%SF': # scale factor - we will ignore it
@@ -425,6 +443,7 @@ class Job:
               continue
 
             # allow for metric - scale to 1/1000 mm
+            # [andreika]: use local units
             if config.Config['measurementunits'] == 'inch':
               if item[0]=='X':      # M.N specification for X-axis.
                 fracpart = int(item[2])
@@ -582,11 +601,12 @@ class Job:
               self.miny = min(self.miny,0)
               self.maxy = max(self.maxy,0)
 
-          x = int(round(x*x_div))
-          y = int(round(y*y_div))
+          # [andreika]: add units_div
+          x = int(round(x*x_div*units_div))
+          y = int(round(y*y_div*units_div))
           if I is not None:
-            I = int(round(I*x_div))
-            J = int(round(J*y_div))
+            I = int(round(I*x_div*units_div))
+            J = int(round(J*y_div*units_div))
             self.commands[layername].append((x,y,I,J,d,circ_signed))
           else:
             self.commands[layername].append((x,y,d))
