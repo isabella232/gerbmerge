@@ -219,6 +219,8 @@ def constructApertureTable(fileList):
     #print 'Reading apertures from %s ...' % fname
 
     knownMacroNames = {}
+    # [andreika]: units conversion
+    units_div = 1.0
 
     fid = file(fname,'rt')
     for line in fid:
@@ -232,6 +234,13 @@ def constructApertureTable(fileList):
       # representation to the dictionary. It might already exist.
       # Ignore %AMOC8* from Eagle for now as it uses a macro parameter.
       if line[:7]=='%AMOC8*':
+        continue
+      # [andreika]: units conversion
+      if line[:7]=='%MOMM*%' and config.Config['measurementunits'] == 'inch':
+        units_div = 1.0 / 25.4
+        continue
+      if line[:7]=='%MOIN*%' and config.Config['measurementunits'] == 'mm':
+        units_div = 25.4
         continue
 
       # parseApertureMacro() sucks up all macro lines up to terminating '%'
@@ -257,6 +266,11 @@ def constructApertureTable(fileList):
         # If this is an aperture definition, add the string representation
         # to the dictionary. It might already exist.
         if A:
+          # [andreika]: apply units
+          if type(A.dimx) == float or type(A.dimx) == int:
+            A.dimx *= units_div
+          if type(A.dimy) == float or type(A.dimy) == int:
+            A.dimy *= units_div
           AT[A.hash()] = A
 
     fid.close()
