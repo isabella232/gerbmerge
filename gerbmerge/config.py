@@ -52,6 +52,7 @@ Config = {
    'fiducialpoints': None,           # List of X,Y co-ordinates at which to draw fiducials
    'fiducialcopperdiameter': 0.08,   # Diameter of copper part of fiducial
    'fiducialmaskdiameter': 0.32,     # Diameter of fiducial soldermask opening
+   'fixedrotationorigin': 0,         # [andreika]: add settings to disable shifting of the rotating origin
    }
 
 # This dictionary is indexed by lowercase layer name and has as values a file
