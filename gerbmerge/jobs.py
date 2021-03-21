@@ -304,6 +304,9 @@ class Job:
     # [andreika]: use local units conversion
     units_div = 1.0
 
+    # [andreika]: store fill mode separately because of G01 can be inside G36/37
+    in_fill_mode = False
+
     # Drawing commands can be repeated with X or Y omitted if they are
     # the same as before. These variables store the last X/Y value as
     # integers in hundred-thousandths of an inch.
@@ -497,6 +500,12 @@ class Job:
             elif gcode==75:
               circ_signed = True
               
+            # [andreika]: we store fill mode separately
+            if gcode==36:
+              in_fill_mode = True
+            elif gcode==37:
+              in_fill_mode = False
+
             continue
 
           raise RuntimeError, "G-Code 'G%02d' is not supported" % gcode
@@ -590,7 +599,9 @@ class Job:
             # It's also OK if we're in the middle of a G36 polygon fill as we're only defining
             # the polygon extents.
             if (d != 2) and (last_gmode != 36):
-              raise RuntimeError, 'File %s has draw command %s with no aperture chosen' % (fullname, sub_line)
+              # [andreika]: check for fill mode more accurately
+              if not in_fill_mode:
+                  raise RuntimeError, 'File %s has draw command %s with no aperture chosen' % (fullname, sub_line)
 
           # Save last_x/y BEFORE scaling to 2.5 format else subsequent single-ordinate
           # flashes (e.g., Y with no X) will be scaled twice!
