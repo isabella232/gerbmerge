@@ -165,8 +165,8 @@ class ApertureMacroPrimitive:
       raise
 
   def rotate(self):
-    if self.code == 1:      # Circle: nothing to do
-      pass
+    if self.code == 1:      # Circle: [andreika]: FIX circle rotation
+      rotatexypair(self.parms, 2)
     elif self.code in (2,20): # Line (vector): fields (2,3) and (4,5) must be rotated, no need to
                               # rotate field 6
       rotatexypair(self.parms, 2)
