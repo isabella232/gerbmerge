@@ -1341,8 +1341,6 @@ def rotateJob(job, degrees = 90, flip = 0, firstpass = True):
   """Create a new job from an existing one, rotating by specified degrees in 90 degree passes"""
   GAT = config.GAT
   GAMT = config.GAMT
-  #!!!!!!!
-  print "rotating job:", job.name, degrees, flip, firstpass
   ##print "rotating job:", job.name, degrees, flip, firstpass
   if firstpass:
     rotatedFlipped = ""
