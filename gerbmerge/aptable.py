@@ -98,14 +98,14 @@ class Aperture:
     else:
       return False ## no new aperture needs to be created
 
-  def rotate(self, RevGAMT):
+  def rotate(self, RevGAMT, flip):
     if self.apname in ('Macro',):
       # Construct a rotated macro, see if it's in the GAMT, and set self.dimx
       # to its name if so. If not, add the rotated macro to the GAMT and set
       # self.dimx to the new name. Recall that GAMT maps name to macro
       # (e.g., GAMT['M9'] = ApertureMacro(...)) while RevGAMT maps hash to
       # macro name (e.g., RevGAMT[hash] = 'M9')
-      AMR = config.GAMT[self.dimx].rotated()
+      AMR = config.GAMT[self.dimx].rotated(flip)
       hash = AMR.hash()
       try:
         self.dimx = RevGAMT[hash]
@@ -114,14 +114,15 @@ class Aperture:
         self.dimx = RevGAMT[hash] = AMR.name
 
     elif self.dimy is not None:       # Rectangles and Ovals have a dimy setting and need to be rotated
-      t = self.dimx
-      self.dimx = self.dimy
-      self.dimy = t
+      if (flip == 0):
+        t = self.dimx
+        self.dimx = self.dimy
+        self.dimy = t
 
-  def rotated(self, RevGAMT):
+  def rotated(self, RevGAMT, flip):
     # deepcopy doesn't work on re patterns for some reason so we copy ourselves manually
     APR = Aperture((self.apname, self.pat, self.format), self.code, self.dimx, self.dimy)
-    APR.rotate(RevGAMT)
+    APR.rotate(RevGAMT, flip)
     return APR
 
   def dump(self, fid=sys.stdout):

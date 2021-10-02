@@ -163,21 +163,25 @@ def canonicalizePanel(panel):
     L = L + job.canonicalize()
   return L
 
-def findJob(jobname, rotated, Jobs=config.Jobs):
+def findJob(jobname, rotatedFlipped, Jobs=config.Jobs):
   """
     Find a job in config.Jobs, possibly rotating it
     If job not in config.Jobs add it for future reference
     Return found job
   """
 
-  if rotated == 90:
-    fullname = jobname + '*rotated90'
-  elif rotated == 180:
-    fullname = jobname + '*rotated180'
-  elif rotated == 270:
-    fullname = jobname + '*rotated270'
-  else:
-    fullname = jobname
+  fullname = jobname
+  if rotatedFlipped[0] == 90:
+    fullname += '*rotated90'
+  elif rotatedFlipped[0] == 180:
+    fullname += '*rotated180'
+  elif rotatedFlipped[0] == 270:
+    fullname += '*rotated270'
+  if rotatedFlipped[1] == 1:
+    fullname += '*flippedH'
+  elif rotatedFlipped[1] == -1:
+    fullname += '*flippedV'
+    
 
   try:
     for existingjob in Jobs.keys():
@@ -187,8 +191,8 @@ def findJob(jobname, rotated, Jobs=config.Jobs):
   except:
     pass
 
-  # Perhaps we just don't have a rotated job yet
-  if rotated:
+  # Perhaps we just don't have a rotated or flipped job yet
+  if rotatedFlipped[0] or rotatedFlipped[1]:
     try:
       for existingjob in Jobs.keys():
         if existingjob.lower() == jobname.lower(): ## job names are case insensitive
@@ -198,8 +202,8 @@ def findJob(jobname, rotated, Jobs=config.Jobs):
   else:
     raise RuntimeError, "Job name '%s' not found" % jobname
 
-  # Make a rotated job
-  job = jobs.rotateJob(job, rotated)
+  # Make a rotated/flipped job
+  job = jobs.rotateJob(job, rotatedFlipped[0], rotatedFlipped[1])
   Jobs[fullname] = job
 
   return jobs.JobLayout(job)
@@ -229,7 +233,7 @@ def parseJobSpec(spec, data):
       else:
         rotated = 0
 
-      return findJob(jobname, rotated)
+      return findJob(jobname, [rotated, 0])
     else:
       raise RuntimeError, "Matrix panels not yet supported"
 

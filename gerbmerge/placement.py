@@ -89,22 +89,31 @@ class Placement:
         print 'Illegal (X,Y) co-ordinates in placement file:\n  %s' % line
         sys.exit(1)
 
-      rotated = 0
+      # rotated or flipped
+      rotatedFlipped = [0, 0]
+      
+      if len(jobname) > 9:
+          if jobname[-9:] == '*flippedH':
+            rotatedFlipped[1] = 1
+            jobname = jobname[:-9]
+          elif jobname[-9:] == '*flippedV':
+            rotatedFlipped[1] = -1
+            jobname = jobname[:-9]
       if len(jobname) > 8:
           if jobname[-8:] == '*rotated':
-            rotated = 90
+            rotatedFlipped[0] = 90
             jobname = jobname[:-8]
           elif jobname[-10:] == '*rotated90':
-            rotated = 90
+            rotatedFlipped[0] = 90
             jobname = jobname[:-10]
           elif jobname[-11:] == '*rotated180':
-            rotated = 180
+            rotatedFlipped[0] = 180
             jobname = jobname[:-11]
           elif jobname[-11:] == '*rotated270':
-            rotated = 270
+            rotatedFlipped[0] = 270
             jobname = jobname[:-11]
 
-      addjob = parselayout.findJob(jobname, rotated, Jobs)
+      addjob = parselayout.findJob(jobname, rotatedFlipped, Jobs)
       addjob.setPosition(X,Y)
       self.jobs.append(addjob)
 
