@@ -1511,11 +1511,11 @@ def rotateJob(job, degrees = 90, flip = 0, firstpass = True):
 # NOTE: There don't appear to be any need for a change. The usual x10 factor seems to apply
 
       if (doFlip == 1):
-        newx = job.minx - (10*x - job.minx)
+        newx = job.maxx - (10*x - job.minx)
         newy = 10*y
       elif (doFlip == -1):
         newx = 10*x
-        newy = job.miny - (10*y - job.miny)
+        newy = job.maxy - (10*y - job.miny)
       else:
         newx = -(10*y - job.miny) + job.minx + offset
         newy =  (10*x - job.minx) + job.miny
@@ -1525,11 +1525,11 @@ def rotateJob(job, degrees = 90, flip = 0, firstpass = True):
 
       if stop_x is not None:
         if (doFlip == 1):
-          newstop_x = job.minx - (stop_x - job.minx)
+          newstop_x = job.maxx - (10*stop_x - job.minx)
           newstop_y = 10*stop_y
         elif (doFlip == -1):
           newstop_x = 10*stop_x
-          newstop_y = job.miny - (10*stop_y - job.miny)
+          newstop_y = job.maxy - (10*stop_y - job.miny)
         else:
           newstop_x = -(10*stop_y - job.miny) + job.minx + offset
           newstop_y =  (10*stop_x - job.minx) + job.miny
