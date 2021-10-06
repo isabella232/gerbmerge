@@ -1346,16 +1346,16 @@ def rotateJob(job, degrees = 90, flip = 0, firstpass = True):
     for tool in job.xcommands[layer].keys():
       J.xcommands[layer][tool] = []
 
-      for x,y,stop_x,stop_y in xcmds[tool]:
-  # add metric support (1/1000 mm vs. 1/100,000 inch)
-  # NOTE: There don't appear to be any need for a change. The usual x10 factor seems to apply
+      for x,y,stop_x,stop_y in job.xcommands[layer][tool]:
+# add metric support (1/1000 mm vs. 1/100,000 inch)
+# NOTE: There don't appear to be any need for a change. The usual x10 factor seems to apply
 
         if (doFlip == 1):
-          newx = job.minx - (10*x - job.minx)
+          newx = job.maxx - (10*x - job.minx)
           newy = 10*y
         elif (doFlip == -1):
           newx = 10*x
-          newy = job.miny - (10*y - job.miny)
+          newy = job.maxy - (10*y - job.miny)
         else:
           newx = -(10*y - job.miny) + job.minx + offset
           newy =  (10*x - job.minx) + job.miny
