@@ -1,8 +1,8 @@
 Metadata-Version: 1.0
 Name: gerbmerge
-Version: 1.9.5
+Version: 2.0
 Summary: Merge multiple Gerber/Excellon files
-Home-page: http://ruggedcircuits.com/gerbmerge
+Home-page: https://github.com/frank-f/gerbmerge
 Author: Rugged Circuits LLC
 Author-email: support@ruggedcircuits.com
 License: GPL

@@ -140,14 +140,15 @@ DEFAULT_LAYERS = [  "BoardOutline",
                     "BottomSoldermask",
                     "TopSolderPasteMask",
                     "BottomSolderPasteMask",
-                    "Drills"                    ]
-REQUIRED_LAYERS = ["BoardOutline", "Drills"]
+                    "DrillsPTH",
+                    "DrillsNPTH"]
+REQUIRED_LAYERS = ["BoardOutline", "DrillsPTH"]
 RESERVED_LAYER_NAMES = () ##add "mergeout", not implemented yet
 
 #Output names
 RE_VALID_OUTPUT_NAME = re.compile(r'^[a-zA-Z0-9_-]+$')
 RE_VALID_OUTPUT_NAME_MESSAGE = "Vaild Characters: a-z, A-Z, 0-9, underscores, hyphens"
-REQUIRED_LAYERS_OUTPUT = ["BoardOutline", "ToolList", "Placement", "Drills"]
+REQUIRED_LAYERS_OUTPUT = ["BoardOutline", "DrillsPTH"]
 
 # Default dictionary of layer names to file extensions
 FILE_EXTENSIONS = { "boardoutline":             "GBO",
@@ -161,9 +162,11 @@ FILE_EXTENSIONS = { "boardoutline":             "GBO",
                     "bottomsoldermask":         "GBS",
                     "topsolderpastemask":       "GTP",
                     "bottomsolderpastemask":    "GBP",
-                    "drills":                   "GDD",
+                    "drillspth":                "GDD",
+                    "drillsnpth":               "GDD",
                     "placement":                "TXT",
-                    "toollist":                 "DRL",
+                    "toollistpth":              "DRL",
+                    "toollistnpth":             "DRL",
                   }
 DEFAULT_EXTENSION = "GER"
 

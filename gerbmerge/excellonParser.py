@@ -26,16 +26,15 @@ def xln2tenthou(L, divisor, zeropadto, zeroSuppression):
         if s is not None:
           if zeroSuppression == 'trailing':
             s = s + '0'*(zeropadto-len(s))
-            #s = s[:6]
 
-          converted = int(round(int(s)*divisor))
-          print s + ", converted = " + str(converted)
+          converted = int(round(int(s)/divisor))
+          #print s + ", converted = " + str(converted)
           V.append(converted)
         else:
           V.append(None)
       return tuple(V)
 
-def xln2tenthou2 (L, divisor, zeropadto):
+def xln2tenthou2(L, divisor, zeropadto):
       V = []
       for s in L:
         if s is not None:
@@ -96,7 +95,7 @@ class ExcellonFormat:
     def isEqualSkipNone(self, excellonFormat):
         if self.integerPart != None and excellonFormat.integerPart != None and self.integerPart != excellonFormat.integerPart:
             return False
-        if self.decimalPart !=None and excellonFormat.decimalPart != None and self.decimalPart != excellonFormat.decimalPart:
+        if self.decimalPart != None and excellonFormat.decimalPart != None and self.decimalPart != excellonFormat.decimalPart:
             return False
         if self.units != None and excellonFormat.units != None and self.units != excellonFormat.units:
             return False
@@ -168,7 +167,7 @@ class PlungeCommand(Command):
             return PlungeCommand(Coordinates(x, y))
         match = xydraw_pat2.match(string)
         if match:
-            x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.getDigits)
+            x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.getDigits())
             return PlungeCommand(Coordinates(x, y))
         match = xdraw_pat.match(string)
         if match:
@@ -184,7 +183,11 @@ class PlungeCommand(Command):
         return
 
     def toDict(self):
-        return {'command' : 'Plunge','tool' : self.tool, 'coordinates' : self.coordinates.toDict()}
+	if self.tool:
+            tool = self.tool.toDict()
+        else:
+            tool = None
+        return dict({'command': 'Plunge','tool': tool, 'coordinates': self.coordinates.toDict()})
 
     @staticmethod
     def fromDict(dictionary):
@@ -261,7 +264,7 @@ class Tool:
         return Tool(currtool, diam)
 
     def toDict(self):
-        return {'tool' : self.number, 'diam' : self.diameter}
+        return dict({'tool': self.number, 'diam': self.diameter})
 #---------------------------------------------------------------------
 class ToolchangeCommand:
     def __init__(self, toolnumber):
@@ -278,10 +281,10 @@ class ToolchangeCommand:
 #---------------------------------------------------------------------
 class excellonParser:
     def __init__(self, expectedExcellonFormat=None):
-        self.ToolList = None
+        self.ToolList = {}
         self.expectedExcellonFormat = expectedExcellonFormat
         self.excellonFormatFromHeader = ExcellonFormat(integerPart=None, decimalPart=None, units=None, zeroSuppression=None)
-        self.toolList = []
+        self.toolList = {'PTH': [], 'NPTH': []}
         self.commands = []
 
     def spliteFile(self, fileContent):
@@ -310,6 +313,12 @@ class excellonParser:
         unitAndZerosPosition = re.compile(r'^(INCH|METRIC),((?:[LT])Z)?$')      # Leading/trailing zeros INCLUDED
         fileFormat = re.compile(r';FILE_FORMAT=(\d):(\d)')
         plating = re.compile(r';TYPE=(.+)')
+        if filename.lower().find('npth') > -1:
+          layer = 'NPTH'
+          platingOption = 'NON_PLATED'
+        else:
+          layer = 'PTH'
+          platingOption = 'PLATED'
 
         currtool = None
         for line in header.splitlines():
@@ -342,51 +351,56 @@ class excellonParser:
             match = plating.match(line)
             if match:
                 platingOption = match.group(1)
-                print platingOption
+            #print platingOption
 
             tool = Tool.fromString(line, filename)
             if tool:
-                if tool in self.toolList:
+                if tool in self.toolList[layer]:
                     raise RuntimeError, "File %s defines tool %s more than once" % (filename, currtool)
-                self.toolList.append(tool)
+                self.toolList[layer].append(tool)
                 continue
 
-    def getToolDiameter(self, tool, filename):
+    def getToolDiameter(self, tool, filename, layer):
         # Diameter will be obtained from embedded tool definition, local tool list or if not found, the global tool list
         try:
-            for tool in self.toolList:
+            for tool in self.toolList[layer]:
                 if tool.tool == tool:
                     diam = tool.diam
         except:
             if self.ToolList:
                 try:
-                    diam = self.ToolList[tool]
+                    diam = self.ToolList[layer][tool]
                 except:
                     raise RuntimeError, "File %s uses tool code %s that is not defined in the job's tool list" % (filename, tool)
             else:
                 try:
-                    diam = config.DefaultToolList[tool]
+                    diam = config.DefaultToolList[layer][tool]
                 except:
                     raise RuntimeError, "File %s uses tool code %s that is not defined in default tool list" % (filename, tool)
         return diam
 
-    def getToolFromToolList(self, toolnumber):
-        for tool in self.toolList:
+    def getToolFromToolList(self, toolnumber, layer):
+        for tool in self.toolList[layer]:
             if tool.number == toolnumber:
                 return tool
         return None
 
     def parseContent(self, content, filename):
         excellonFormat = self.excellonFormatFromHeader
-        divisor = 10.0**(4 - (excellonFormat.decimalPart))
+        divisor = 10.0**(6 - (excellonFormat.decimalPart))
         lastCoordinates = None
         currtool = None
+
+        if filename.lower().find('npth') > -1:
+            layer = 'NPTH'
+        else:
+            layer = 'PTH'
 
         for line in content.splitlines():
             toolCommand = ToolchangeCommand.fromString(line)
             if toolCommand:
                 if toolCommand.toString() != 'T00': # KiCad specific fixes, tool T00 is KiCad specific
-                    currtool = self.getToolFromToolList(toolCommand.toString())
+                    currtool = self.getToolFromToolList(toolCommand.toString(), layer)
                 continue
 
             command = PlungeCommand.fromString(line, excellonFormat, lastCoordinates, divisor)
@@ -443,9 +457,9 @@ class excellonParser:
         return None
 
     #deprecated functin should be removed when other part of gerbmerge will be changed
-    def getxdiam(self):
+    def getxdiam(self, layer):
         xdiam = {}
-        for tool in self.toolList:
+        for tool in self.toolList[layer]:
             xdiam[tool.toDict()['tool']] = tool.toDict()['diam']
         return xdiam
 

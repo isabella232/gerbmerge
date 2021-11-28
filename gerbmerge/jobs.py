@@ -178,17 +178,17 @@ class Job:
     # The key to this dictionary is the full tool name, e.g., T03 as a
     # string. Each command is an (X,Y,STOP_X,STOP_Y) integer tuple.
     # STOP_X and STOP_Y are not none only if this is a G85 command.
-    self.xcommands = {}
+    self.xcommands = {'PTH': {}, 'NPTH': {}}
 
     # This is a dictionary mapping LOCAL tool names (e.g., T03) to diameters
     # in inches for THIS JOB. This dictionary will be initially empty
     # for old-style Excellon files with no embedded tool sizes. The
     # main program will construct this dictionary from the global tool
     # table in this case, once all jobs have been read in.
-    self.xdiam = {}
+    self.xdiam = {'PTH': {}, 'NPTH': {}}
 
     # This is a mapping from tool name to diameter for THIS JOB
-    self.ToolList = None
+    self.ToolList = {'PTH': {}, 'NPTH': {}}
 
     # How many times to replicate this job if using auto-placement
     self.Repeat = 1
@@ -250,7 +250,7 @@ class Job:
         if type(c) == types.TupleType:                      ## ensure that command is of type tuple
           command_list = list(c)                            ## convert tuple to list
           if  (type( command_list[0] ) == types.IntType) \
-          and (type( command_list[1] ) == types.IntType):  ## ensure that first two elemenst are integers
+          and (type( command_list[1] ) == types.IntType):   ## ensure that first two elemenst are integers
             command_list[0] += x_shift
             command_list[1] += y_shift
           command[index] = tuple(command_list)              ## convert list back to tuple
@@ -258,26 +258,27 @@ class Job:
       self.commands[layer] = command                        ## set modified command
 
     # Shift all excellon commands
-    for tool, command in self.xcommands.iteritems():
+    for layer in ['PTH', 'NPTH']:
+      for tool, command in self.xcommands[layer].iteritems():
 
-      # Loop through each command in each layer
-      for index in range( len(command) ):
-        c = command[index]
+        # Loop through each command in each layer
+        for index in range( len(command) ):
+          c = command[index]
 
-        # Shift X and Y coordinate of command
-        command_list = list(c)                              ## convert tuple to list
-        if ( type( command_list[0] ) == types.IntType ) \
-        and ( type( command_list[1] ) == types.IntType ):  ## ensure that first two elemenst are integers
-          command_list[0] += x_shift / 10
-          command_list[1] += y_shift / 10
-          if ( type( command_list[2] ) == types.IntType ) \
-          and ( type( command_list[3] ) == types.IntType ):  ## ensure that first two elemenst are integerslen(command_list) == 4:
-            # G85 command, need to shift the second pair of xy, too.
-            command_list[2] += x_shift / 10
-            command_list[3] += y_shift / 10
-        command[index] = tuple(command_list)                ## convert list back to tuple
+          # Shift X and Y coordinate of command
+          command_list = list(c)                              ## convert tuple to list
+          if ( type( command_list[0] ) == types.IntType ) \
+          and ( type( command_list[1] ) == types.IntType ):   ## ensure that first two elemenst are integers
+            command_list[0] += x_shift / 10
+            command_list[1] += y_shift / 10
+            if ( type( command_list[2] ) == types.IntType ) \
+            and ( type( command_list[3] ) == types.IntType ): ## ensure that first two elemenst are integerslen(command_list) == 4:
+              # G85 command, need to shift the second pair of xy, too.
+              command_list[2] += x_shift / 10
+              command_list[3] += y_shift / 10
+          command[index] = tuple(command_list)                ## convert list back to tuple
 
-      self.xcommands[tool] = command                        ## set modified command
+        self.xcommands[layer][tool] = command                 ## set modified command
 
   def parseGerber(self, fullname, layername, updateExtents = 0):
     """Do the dirty work. Read the Gerber file given the
@@ -634,18 +635,18 @@ class Job:
       print layername
       print self.commands[layername]
 
-  def parseExcellon(self, fullname):
+  def parseExcellon(self, fullname, layer):
     excellonDecimals = 0
     if self.ExcellonDecimals > 0:
         excellonDecimals = self.ExcellonDecimals
     else:
         excellonDecimals = config.Config['excellondecimals']
 
-    expectedExcellonFromat = excellonParser.ExcellonFormat(2, excellonDecimals, config.Config['measurementunits'], None)
+    expectedExcellonFromat = excellonParser.ExcellonFormat(6 - excellonDecimals, excellonDecimals, config.Config['measurementunits'], None)
     excellon = excellonParser.excellonParser(expectedExcellonFromat)
     excellon.loadFile(fullname)
-    self.xdiam = excellon.getxdiam()
-    self.xcommands = excellon.getxcommands()
+    self.xdiam[layer] = excellon.getxdiam(layer)
+    self.xcommands[layer] = excellon.getxcommands()
 
   def hasLayer(self, layername):
     return self.commands.has_key(layername)
@@ -693,15 +694,15 @@ class Job:
         else:
           fid.write('%s*\n' % cmd)
 
-  def findTools(self, diameter):
+  def findTools(self, diameter, layer):
     "Find the tools, if any, with the given diameter in inches. There may be more than one!"
     L = []
-    for tool, diam in self.xdiam.items():
+    for tool, diam in self.xdiam[layer].items():
       if diam==diameter:
         L.append(tool)
     return L
 
-  def writeExcellon(self, fid, diameter, Xoff, Yoff):
+  def writeExcellon(self, fid, diameter, Xoff, Yoff, layer='PTH'):
     """Write out the data such that the lower-left corner of this job is at the given (X,Y) position, in inches
 
     args:
@@ -730,7 +731,7 @@ class Job:
     DX = int(round(DX/10.0))
     DY = int(round(DY/10.0))
 
-    ltools = self.findTools(diameter)
+    ltools = self.findTools(diameter, layer)
 
     def formatForXln(num):
       """
@@ -738,16 +739,18 @@ class Job:
       returns string
       """
       divisor = 10.0**(4 - config.Config['excellondecimals'])
-      if config.Config['excellonleadingzeros']:
+      if config.Config['excellonleadingzeros'] and num >= 0:
         fmtstr = '%06d'
+      elif config.Config['excellonleadingzeros']:
+        fmtstr = '%07d'
       else:
         fmtstr = '%d'
       return fmtstr % (num / divisor)
 
     # Boogie
     for ltool in ltools:
-      if self.xcommands.has_key(ltool):
-        for cmd in self.xcommands[ltool]:
+      if self.xcommands[layer].has_key(ltool):
+        for cmd in self.xcommands[layer][ltool]:
           x, y, stop_x, stop_y = cmd
           new_x = x+DX
           new_y = y+DY
@@ -760,7 +763,7 @@ class Job:
                       (formatForXln(new_x), formatForXln(new_y),
                        formatForXln(new_stop_x), formatForXln(new_stop_y)))
 
-  def writeDrillHits(self, fid, diameter, toolNum, Xoff, Yoff):
+  def writeDrillHits(self, fid, diameter, toolNum, Xoff, Yoff, layer):
     """Write a drill hit pattern. diameter is tool diameter in inches, while toolNum is
     an integer index into strokes.DrillStrokeList"""
 
@@ -781,17 +784,17 @@ class Job:
     # Do NOT round down to 2.4 format. These drill hits are in Gerber 2.5 format, not
     # Excellon plunge commands.
 
-    ltools = self.findTools(diameter)
+    ltools = self.findTools(diameter, layer)
 
     for ltool in ltools:
-      if self.xcommands.has_key(ltool):
-        for cmd in self.xcommands[ltool]:
-          x, y, stop_x, stop_y = cmd
-          # add metric support (1/1000 mm vs. 1/100,000 inch)
+        if self.xcommands[layer].has_key(ltool):
+          for cmd in self.xcommands[layer][ltool]:
+            x, y, stop_x, stop_y = cmd
+            # add metric support (1/1000 mm vs. 1/100,000 inch)
 # TODO - verify metric scaling is correct???
-          makestroke.drawDrillHit(fid, 10*x+DX, 10*y+DY, toolNum)
-          if stop_x is not None:
-            makestroke.drawDrillHit(fid, 10*stop_x+DX, 10*stop_y+DY, toolNum)
+            makestroke.drawDrillHit(fid, 10*x+DX, 10*y+DY, toolNum)
+            if stop_x is not None:
+              makestroke.drawDrillHit(fid, 10*stop_x+DX, 10*stop_y+DY, toolNum)
 
   def aperturesAndMacros(self, layername):
     "Return dictionaries whose keys are all necessary aperture names and macro names for this layer"
@@ -1004,17 +1007,17 @@ class Job:
 
   def trimExcellon(self):
     "Remove plunge commands that are outside job dimensions"
-    keys = self.xcommands.keys()
-    for toolname in keys:
-      # Remember Excellon is 2.4 format while Gerber data is 2.5 format
-      validList = [tup for tup in self.xcommands[toolname]
-                   if (self.inBorders(10*tup[0],10*tup[1]) and
-                       (tup[2] is None or self.inBorders(10*tup[2],10*tup[3])))]
-      if validList:
-        self.xcommands[toolname] = validList
-      else:
-        del self.xcommands[toolname]
-        del self.xdiam[toolname]
+    for layer in ['PTH', 'NPTH']:
+      for toolname in self.xcommands[layer].keys():
+        # Remember Excellon is 2.4 format while Gerber data is 2.5 format
+        validList = [tup for tup in self.xcommands[layer][toolname]
+                     if (self.inBorders(10*tup[0], 10*tup[1]) and
+                         (tup[2] is None or self.inBorders(10*tup[2], 10*tup[3])))]
+        if validList:
+          self.xcommands[layer][toolname] = validList
+        else:
+          del self.xcommands[layer][toolname]
+          del self.xdiam[layer][toolname]
 
 # This class encapsulates a Job object, providing absolute
 # positioning information.
@@ -1034,13 +1037,13 @@ class JobLayout:
   def aperturesAndMacros(self, layername):
     return self.job.aperturesAndMacros(layername)
 
-  def writeExcellon(self, fid, diameter):
+  def writeExcellon(self, fid, diameter, layer='PTH'):
     assert self.x is not None
-    self.job.writeExcellon(fid, diameter, self.x, self.y)
+    self.job.writeExcellon(fid, diameter, self.x, self.y, layer)
 
-  def writeDrillHits(self, fid, diameter, toolNum):
+  def writeDrillHits(self, fid, diameter, toolNum, layer='PTH'):
     assert self.x is not None
-    self.job.writeDrillHits(fid, diameter, toolNum, self.x, self.y)
+    self.job.writeDrillHits(fid, diameter, toolNum, self.x, self.y, layer)
 
   def writeCutLines(self, fid, drawing_code, X1, Y1, X2, Y2):
     """Draw a board outline using the given aperture code"""
@@ -1142,12 +1145,12 @@ class JobLayout:
   def height_in(self):
     return self.job.height_in()
 
-  def drillhits(self, diameter):
-    tools = self.job.findTools(diameter)
+  def drillhits(self, diameter, layer):
+    tools = self.job.findTools(diameter, layer)
     total = 0
     for tool in tools:
       try:
-        total += len(self.job.xcommands[tool])
+        total += len(self.job.xcommands[layer][tool])
       except:
         pass
 
@@ -1292,29 +1295,32 @@ def rotateJob(job, degrees = 90, firstpass = True):
 
   # Finally, rotate drills. Offset is in hundred-thousandths (2.5) while Excellon
   # data is in 2.4 format.
-  for tool in job.xcommands.keys():
-    J.xcommands[tool] = []
+  xcmds = [job.xcommands, job.xcommandsNPTH]
+  xcmdsJ = [J.xcommands, J.xcommandsNPTH]
+  for layer in ['PTH', 'NPTH']:
+    for tool in job.xcommands[layer].keys():
+      J.xcommands[layer][tool] = []
 
-    for x,y,stop_x,stop_y in job.xcommands[tool]:
-# add metric support (1/1000 mm vs. 1/100,000 inch)
-# NOTE: There don't appear to be any need for a change. The usual x10 factor seems to apply
+      for x,y,stop_x,stop_y in xcmd[tool]:
+  # add metric support (1/1000 mm vs. 1/100,000 inch)
+  # NOTE: There don't appear to be any need for a change. The usual x10 factor seems to apply
 
-      newx = -(10*y - job.miny) + job.minx + offset
-      newy =  (10*x - job.minx) + job.miny
+        newx = -(10*y - job.miny) + job.minx + offset
+        newy =  (10*x - job.minx) + job.miny
 
-      newx = int(round(newx/10.0))
-      newy = int(round(newy/10.0))
+        newx = int(round(newx/10.0))
+        newy = int(round(newy/10.0))
 
-      if stop_x is not None:
-        newstop_x = -(10*stop_y - job.miny) + job.minx + offset
-        newstop_y =  (10*stop_x - job.minx) + job.miny
+        if stop_x is not None:
+          newstop_x = -(10*stop_y - job.miny) + job.minx + offset
+          newstop_y =  (10*stop_x - job.minx) + job.miny
 
-        newstop_x = int(round(newstop_x/10.0))
-        newstop_y = int(round(newstop_y/10.0))
-      else:
-        newstop_x = None
-        newstop_y = None
-      J.xcommands[tool].append((newx,newy,newstop_x,newstop_y))
+          newstop_x = int(round(newstop_x/10.0))
+          newstop_y = int(round(newstop_y/10.0))
+        else:
+          newstop_x = None
+          newstop_y = None
+        J.xcommands[layer][tool].append((newx,newy,newstop_x,newstop_y))
 
   # Rotate some more if required
   degrees -= 90

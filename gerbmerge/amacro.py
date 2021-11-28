@@ -166,7 +166,7 @@ class ApertureMacroPrimitive:
 
   def rotate(self):
     if self.code == 1:      # Circle: nothing to do
-      pass
+      rotatexypair(self.parms,2)
     elif self.code in (2,20): # Line (vector): fields (2,3) and (4,5) must be rotated, no need to
                               # rotate field 6
       rotatexypair(self.parms, 2)
@@ -179,7 +179,7 @@ class ApertureMacroPrimitive:
       rotatethelem(self.parms, 5)
     elif self.code == 4:      # Outline: fields (2,3), (4,5), etc. must be rotated, the last field need not be incremented
       ix = 2
-      for pts in range(self.parms[1]):    # parms[1] is the number of points
+      for pts in range(self.parms[1]+1):  # parms[1] is the number of points, but the last point is the same as the start point so we have to increment the value
         rotatexypair(self.parms, ix)
         ix += 2
       #rotatethelem(self.parms, ix)

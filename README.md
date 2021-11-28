@@ -3,6 +3,14 @@
 <P><HR ALIGN=LEFT></P>
 
 <H2>What's New</H2>
+<p>In release 2.0</p>
+<ul>
+<li>Support for two Excellon files per project (for example plated and non-plated)</li>
+<li>Improved metric gerber files support</li>
+<li>Collected and combined various fixes and patches from other forks (forgot to make notes, just remember <a href="https://git.phoerauf.de/VT7/gerbmerge-utils">this one</a>)</li>
+<li>Tested with KiCad 5.1.x</li>
+</ul>
+
 <p>In release 1.9.5</p>
 <ul>
 <li>Set interpreter to python2 for Archlinux compatibility</li>

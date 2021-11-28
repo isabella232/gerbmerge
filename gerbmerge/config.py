@@ -33,11 +33,12 @@ Config = {
    'panelwidth': '12.6',             # X-Dimension maximum panel size (Olimex)
    'panelheight': '7.8',             # Y-Dimension maximum panel size (Olimex)
    'cropmarklayers': None,           # e.g., *toplayer,*bottomlayer
-   'cropmarkwidth': 0, #'0.01',          # Width (inches) of crop lines
+   'cropmarkwidth': 0, #'0.01',      # Width (inches) of crop lines
    'cutlinelayers': None,            # as for cropmarklayers
-   'cutlinewidth': 0, #'0.01',           # Width (inches) of cut lines
+   'cutlinewidth': 0, #'0.01',       # Width (inches) of cut lines
    'minimumfeaturesize': 0,          # Minimum dimension for selected layers
-   'toollist': None,                 # Name of file containing default tool list
+   'toollistpth': None,              # Name of file containing default tool list
+   'toollistnpth': None,             # Name of file containing default tool list
    'drillclustertolerance': '.002',  # Tolerance for clustering drill sizes
    'allowmissinglayers': 0,          # Set to 1 to allow multiple jobs to have non-matching layers
    'fabricationdrawingfile': None,   # Name of file to which to write fabrication drawing, or None
@@ -60,9 +61,11 @@ Config = {
 # name to use for the output.
 MergeOutputFiles = {
   'boardoutline': 'merged.boardoutline.ger',
-  'drills':       'merged.drills.xln',
+  'drillspth':    'merged.drills-PTH.xln',
+  'drillsnpth':   'merged.drills-NPTH.xln',
   'placement':    'merged.placement.txt',
-  'toollist':     'merged.toollist.drl'
+  'toollistpth':  'merged.toollist-PTH.drl',
+  'toollistnpth': 'merged.toollist-NPTH.drl'
   }
 
 # The global aperture table, indexed by aperture code (e.g., 'D10')
@@ -81,16 +84,16 @@ LayerList = {'boardoutline': 1}
 # The tool list as read in from the DefaultToolList file in the configuration
 # file. This is a dictionary indexed by tool name (e.g., 'T03') and
 # a floating point number as the value, the drill diameter in inches.
-DefaultToolList = {}
+DefaultToolList = {'PTH': {}, 'NPTH': {}}
 
 # The GlobalToolMap dictionary maps tool name to diameter in inches. It
 # is initially empty and is constructed after all files are read in. It
 # only contains actual tools used in jobs.
-GlobalToolMap = {}
+GlobalToolMap = {'PTH': {}, 'NPTH': {}}
 
 # The GlobalToolRMap dictionary is a reverse dictionary of ToolMap, i.e., it maps
 # diameter to tool name.
-GlobalToolRMap = {}
+GlobalToolRMap = {'PTH': {}, 'NPTH': {}}
 
 ##############################################################################
 
@@ -104,14 +107,6 @@ TrimExcellon = 1
 # each layer. It is a dictionary indexed by layer name (e.g. '*topsilkscreen') and
 # has a floating point number as the value (in inches).
 MinimumFeatureDimension = {}
-
-# This configuration option is a positive integer that determines the maximum
-# amout of time to allow for random placements (seconds). A SearchTimeout of 0
-# indicates that no timeout should occur and random placements will occur
-# forever until a KeyboardInterrupt is raised.
-
-# moved to setting that can be loaded from config file
-#SearchTimeout = 0
 
 # Construct the reverse-GAT/GAMT translation table, keyed by aperture/aperture macro
 # hash string. The value is the aperture code (e.g., 'D10') or macro name (e.g., 'M5').
@@ -243,7 +238,7 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     raise RuntimeError, "Missing [Options] section in configuration file"
 
   # Ensure we got a tool list
-  if not Config.has_key('toollist'):
+  if not Config.has_key('toollistpth'):
     raise RuntimeError, "INTERNAL ERROR: Missing tool list assignment in [Options] section"
 
   # Make integers integers, floats floats
@@ -290,7 +285,7 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
   if CP.has_section('MergeOutputFiles'):
     for opt in CP.options('MergeOutputFiles'):
       # Each option is a layer name and the output file for this name
-      if opt[0]=='*' or opt in ('boardoutline', 'drills', 'placement', 'toollist'):
+      if opt[0]=='*' or opt in ('boardoutline', 'drillspth', 'drillsnpth', 'placement', 'toollistpth', 'toollistnpth'):
         MergeOutputFiles[opt] = CP.get('MergeOutputFiles', opt)
 
   # Now, we go through all jobs and collect Gerber layers
@@ -306,7 +301,7 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     if not CP.has_option(jobname, 'boardoutline'):
       raise RuntimeError, "Job '%s' does not have a board outline specified" % jobname
 
-    if not CP.has_option(jobname, 'drills'):
+    if not CP.has_option(jobname, 'drillspth'):
       raise RuntimeError, "Job '%s' does not have a drills layer specified" % jobname
 
     for layername in CP.options(jobname):
@@ -331,8 +326,10 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     sys.exit(0)
 
   # Parse the tool list
-  if Config['toollist']:
-    DefaultToolList = parseToolList(Config['toollist'])
+  if Config['toollistpth']:
+    DefaultToolList['PTH'] = parseToolList(Config['toollistpth'])
+  if Config['toollistnpth']:
+    DefaultToolList['NPTH'] = parseToolList(Config['toollistnpth'])
 
   # Now get jobs. Each job implies layer names, and we
   # expect consistency in layer names from one job to the
@@ -364,8 +361,10 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     for layername in CP.options(jobname):
       fname = CP.get(jobname, layername)
 
-      if layername == 'toollist':
-        J.ToolList = parseToolList(fname)
+      if layername == 'toollistpth':
+        J.ToolList['PTH'] = parseToolList(fname)
+      elif layername == 'toollistnpth':
+        J.ToolList['NPTH'] = parseToolList(fname)
       elif layername=='excellondecimals':
         try:
           J.ExcellonDecimals = int(fname)
@@ -389,8 +388,10 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
         J.parseGerber(fname, layername, updateExtents=1)
       elif layername[0]=='*':
         J.parseGerber(fname, layername, updateExtents=0)
-      elif layername=='drills':
-        J.parseExcellon(fname)
+      elif layername=='drillspth':
+        J.parseExcellon(fname, layer='PTH')
+      elif layername=='drillsnpth':
+        J.parseExcellon(fname, layer='NPTH')
 
     # Emit warnings if some layers are missing
     LL = LayerList.copy()
