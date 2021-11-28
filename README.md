@@ -155,14 +155,14 @@ c:\python27\scripts\pip.exe uninstall gerbmerge
 <p>Launch shell and install <i>simpleparse</i>:
 <ul>
 <pre>
-sudo pip install simpleparse
+sudo pip2 install SimpleParse
 </pre>
 </ul>
 <p>Download and unpack <i>gerbmerge</i> sources, navigate to its folder and run:
 <ul>
 <pre>
 python setup.py sdist
-sudo pip istall dist/gerbmerge-1.9.4.tar.gz
+sudo pip install dist/gerbmerge-2.0.tar.gz
 </pre>
 </ul>
 <p>Now you can use it by running <i>gerbmerge</i>.
