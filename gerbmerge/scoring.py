@@ -305,10 +305,12 @@ def writeScoring(fid, Place, OriginX, OriginY, MaxXExtent, MaxYExtent):
       addVerticalLine(Lines, x, mousebiteY + mousebiteLen/2, Y, extents)     # to the left of job
 
     elif config.Config['scoringtype'] == 'vgroove': # Scoring lines go all the way across the panel now
-      addHorizontalLine(Lines, OriginX, MaxXExtent, Y, extents)   # above job
-      addVerticalLine(Lines, X, OriginY, MaxYExtent, extents)     # to the right of job
-      addHorizontalLine(Lines, OriginX, MaxXExtent, y, extents)   # below job
-      addVerticalLine(Lines, x, OriginY, MaxYExtent, extents)     # to the left of job
+      if config.Config['xspacing'] < 2:
+        addVerticalLine(Lines, X, OriginY, MaxYExtent, extents)     # to the right of job
+        addVerticalLine(Lines, x, OriginY, MaxYExtent, extents)     # to the left of job
+      if config.Config['yspacing'] < 2:
+        addHorizontalLine(Lines, OriginX, MaxXExtent, Y, extents)   # above job
+        addHorizontalLine(Lines, OriginX, MaxXExtent, y, extents)   # below job
 
   # Combine disparate lines into single lines
   Lines = mergeLines(Lines)

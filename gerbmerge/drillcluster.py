@@ -84,7 +84,7 @@ def cluster(drills, tolerance, debug = _DEBUG):
 
     return new_drills
 
-def remap(jobs, globalToolMap, debug = _DEBUG):
+def remap(jobs, globalToolMap, layer, debug = _DEBUG):
     """
         Remap tools and commands in all jobs to match new tool map
 
@@ -100,48 +100,47 @@ def remap(jobs, globalToolMap, debug = _DEBUG):
     for job in jobs:
         job = job.job ##access job inside job layout
         debug_print("\n  Job name: " + job.name)
-        for layer in ['PTH', 'NPTH']:
-          if len(globalToolMap) == 0:
-              continue
-          debug_print("\n  Layer:")
-          debug_print( layer )
-          debug_print("\n  Original job tools:")
-          debug_print( str(job.xdiam[layer]) )
-          debug_print("\n  Original commands:")
-          debug_print( str(job.xcommands[layer]) )
-          new_tools = {}
-          new_commands = {}
-          for tool, diam in job.xdiam[layer].items():
+        if len(globalToolMap) == 0:
+            continue
+        debug_print("\n  Layer:")
+        debug_print( layer )
+        debug_print("\n  Original job tools:")
+        debug_print( str(job.xdiam[layer]) )
+        debug_print("\n  Original commands:")
+        debug_print( str(job.xcommands[layer]) )
+        new_tools = {}
+        new_commands = {}
+        for tool, diam in job.xdiam[layer].items():
 
-              ##debug_print("\n  Current tool: " + tool + " (" + str_d(diam) + ")")
+            ##debug_print("\n  Current tool: " + tool + " (" + str_d(diam) + ")")
 
-              # Search for best matching tool
-              best_diam, best_tool = globalToolMap[0]
+            # Search for best matching tool
+            best_diam, best_tool = globalToolMap[0]
 
-              for glob_diam, glob_tool in globalToolMap:
-                  if abs(glob_diam - diam) < abs(best_diam - diam):
-                      best_tool = glob_tool
-                      best_diam = glob_diam
-              ##debug_print("Best match: " + best_tool + " (" + str_d(best_diam) + ")")
-              new_tools[best_tool] = best_diam
-              ##debug_print(best_tool + " will replace " + tool)
+            for glob_diam, glob_tool in globalToolMap:
+                if abs(glob_diam - diam) < abs(best_diam - diam):
+                    best_tool = glob_tool
+                    best_diam = glob_diam
+            ##debug_print("Best match: " + best_tool + " (" + str_d(best_diam) + ")")
+            new_tools[best_tool] = best_diam
+            ##debug_print(best_tool + " will replace " + tool)
 
-              # Append commands to existing commands if they exist
-              if best_tool in new_commands:
-                  ##debug_print( "Current commands: " + str( new_commands[best_tool] ) )
-                  temp = new_commands[best_tool]
-                  temp.extend( job.xcommands[layer][tool] )
-                  new_commands[best_tool] = temp
-                  ##debug_print( "All commands: " + str( new_commands[best_tool] ) )
-              else:
-                  new_commands[best_tool] = job.xcommands[layer][tool]
+            # Append commands to existing commands if they exist
+            if best_tool in new_commands:
+                ##debug_print( "Current commands: " + str( new_commands[best_tool] ) )
+                temp = new_commands[best_tool]
+                temp.extend( job.xcommands[layer][tool] )
+                new_commands[best_tool] = temp
+                ##debug_print( "All commands: " + str( new_commands[best_tool] ) )
+            else:
+                new_commands[best_tool] = job.xcommands[layer][tool]
 
-          debug_print("\n  New job tools:")
-          debug_print( str(new_tools) )
-          debug_print("\n  New commands:")
-          debug_print( str(new_commands) )
-          job.xdiam[layer] = new_tools
-          job.xcommands[layer] = new_commands
+        debug_print("\n  New job tools:")
+        debug_print( str(new_tools) )
+        debug_print("\n  New commands:")
+        debug_print( str(new_commands) )
+        job.xdiam[layer] = new_tools
+        job.xcommands[layer] = new_commands
 
 def debug_print(text, status = False, newLine = True):
     """

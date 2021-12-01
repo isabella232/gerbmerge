@@ -642,11 +642,11 @@ class Job:
     else:
         excellonDecimals = config.Config['excellondecimals']
 
-    expectedExcellonFromat = excellonParser.ExcellonFormat(6 - excellonDecimals, excellonDecimals, config.Config['measurementunits'], None)
-    excellon = excellonParser.excellonParser(expectedExcellonFromat)
+    expectedExcellonFormat = excellonParser.ExcellonFormat(6 - excellonDecimals, excellonDecimals, config.Config['measurementunits'], None)
+    excellon = excellonParser.excellonParser(expectedExcellonFormat)
     excellon.loadFile(fullname)
     self.xdiam[layer] = excellon.getxdiam(layer)
-    self.xcommands[layer] = excellon.getxcommands()
+    self.xcommands[layer] = excellon.getxcommands(layer)
 
   def hasLayer(self, layername):
     return self.commands.has_key(layername)
@@ -745,7 +745,7 @@ class Job:
         fmtstr = '%07d'
       else:
         fmtstr = '%d'
-      return fmtstr % (num / divisor)
+      return fmtstr % (num * divisor)
 
     # Boogie
     for ltool in ltools:
@@ -1295,13 +1295,13 @@ def rotateJob(job, degrees = 90, firstpass = True):
 
   # Finally, rotate drills. Offset is in hundred-thousandths (2.5) while Excellon
   # data is in 2.4 format.
-  xcmds = [job.xcommands, job.xcommandsNPTH]
-  xcmdsJ = [J.xcommands, J.xcommandsNPTH]
   for layer in ['PTH', 'NPTH']:
+    xcmds = job.xcommands[layer]
+    xcmdsJ = J.xcommands[layer]
     for tool in job.xcommands[layer].keys():
       J.xcommands[layer][tool] = []
 
-      for x,y,stop_x,stop_y in xcmd[tool]:
+      for x,y,stop_x,stop_y in xcmds[tool]:
   # add metric support (1/1000 mm vs. 1/100,000 inch)
   # NOTE: There don't appear to be any need for a change. The usual x10 factor seems to apply
 

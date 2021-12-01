@@ -264,6 +264,19 @@ def writeCropMarks(fid, drawing_code, OriginX, OriginY, MaxXExtent, MaxYExtent):
   fid.write('X%07dY%07dD01*\n' % (util.in2gerb(x+0.000), util.in2gerb(y+0.000)))
   fid.write('X%07dY%07dD01*\n' % (util.in2gerb(x+cropW), util.in2gerb(y+0.000)))
 
+def writeBorder(fid, drawing_code, OriginX, OriginY, MaxXExtent, MaxYExtent):
+    """Add border outline on the given layer"""
+
+    # Choose drawing aperture
+    fid.write('%s*\n' % drawing_code)
+
+    # Draw the rectangle
+    fid.write('X%07dY%07dD02*\n' % (util.in2gerb(OriginX), util.in2gerb(OriginY)))        # Bottom-left
+    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(OriginX), util.in2gerb(MaxYExtent)))     # Top-left
+    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(MaxXExtent), util.in2gerb(MaxYExtent)))  # Top-right
+    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(MaxXExtent), util.in2gerb(OriginY)))     # Bottom-right
+    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(OriginX), util.in2gerb(OriginY)))        # Bottom-left
+
 def disclaimer():
   print """
 ****************************************************
@@ -582,7 +595,10 @@ def merge(opts, args, gui = None):
       if config.Config['cutlinelayers'] and (layername in config.Config['cutlinelayers']):
         fid.write('%s*\n' % drawing_code_cut)    # Choose drawing aperture
         #print "writing drawcode_cut: %s" % drawing_code_cut
-        job.writeCutLines(fid, drawing_code_cut, OriginX, OriginY, MaxXExtent, MaxYExtent)
+        #job.writeCutLines(fid, drawing_code_cut, OriginX, OriginY, MaxXExtent, MaxYExtent)
+        (X,Y) = Place.extents()
+        writeBorder(fid, drawing_code_cut, OriginX + config.Config['leftmargin'], OriginY + config.Config['bottommargin'], X, Y)
+        writeBorder(fid, drawing_code_cut, OriginX, OriginY, MaxXExtent, MaxYExtent)
 
     if config.Config['cropmarklayers']:
       if layername in config.Config['cropmarklayers']:
@@ -613,15 +629,8 @@ def merge(opts, args, gui = None):
       AP = aptable.Aperture(aptable.Circle, 'D10', 0.25) # we'll use 0.25 mm - same as Diptrace
     AP.writeDef(fid)
 
-    # Choose drawing aperture D10
-    fid.write('D10*\n')
-
     # Draw the rectangle
-    fid.write('X%07dY%07dD02*\n' % (util.in2gerb(OriginX), util.in2gerb(OriginY)))        # Bottom-left
-    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(OriginX), util.in2gerb(MaxYExtent)))     # Top-left
-    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(MaxXExtent), util.in2gerb(MaxYExtent)))  # Top-right
-    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(MaxXExtent), util.in2gerb(OriginY)))     # Bottom-right
-    fid.write('X%07dY%07dD01*\n' % (util.in2gerb(OriginX), util.in2gerb(OriginY)))        # Bottom-left
+    writeBorder(fid, 'D10', OriginX, OriginY, MaxXExtent, MaxYExtent)
 
     writeGerberFooter(fid)
     fid.close()
@@ -678,7 +687,7 @@ def merge(opts, args, gui = None):
       # Cluster similar tool sizes to reduce number of drills
       if config.Config['drillclustertolerance'] > 0:
         config.GlobalToolRMap[layer] = drillcluster.cluster( config.GlobalToolRMap[layer], config.Config['drillclustertolerance'] )
-        drillcluster.remap( Place.jobs, config.GlobalToolRMap[layer].items() )
+        drillcluster.remap( Place.jobs, config.GlobalToolRMap[layer].items(), layer )
 
       # Now construct mapping of tool numbers to diameters
       for diam,tool in config.GlobalToolRMap[layer].items():
@@ -757,9 +766,10 @@ def merge(opts, args, gui = None):
   totalarea = ((MaxXExtent-OriginX)*(MaxYExtent-OriginY))
 
   ToolStats = {}
-  drillhits = 0
   for layer in Tools.keys():
-    ToolStats[layer] = {}
+    drillhits = 0
+    if not ToolStats.has_key(layer):
+      ToolStats[layer] = {}
     for tool in Tools[layer]:
       ToolStats[layer][tool]=0
       #for row in Layout:
@@ -801,7 +811,7 @@ def merge(opts, args, gui = None):
     print '\nTool List:'
     smallestDrill = 999.9
     for tool in Tools[layer]:
-      if ToolStats[layer][tool]:
+      if ToolStats[layer].has_key(tool):
         if config.Config['measurementunits'] == 'inch':
           fid.write('%s %.4fin\n' % (tool, config.GlobalToolMap[layer][tool]))
           print '  %s %.4f" %5d hits' % (tool, config.GlobalToolMap[layer][tool], ToolStats[layer][tool])

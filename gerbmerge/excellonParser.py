@@ -285,7 +285,7 @@ class excellonParser:
         self.expectedExcellonFormat = expectedExcellonFormat
         self.excellonFormatFromHeader = ExcellonFormat(integerPart=None, decimalPart=None, units=None, zeroSuppression=None)
         self.toolList = {'PTH': [], 'NPTH': []}
-        self.commands = []
+        self.commands = {'PTH': [], 'NPTH': []}
 
     def spliteFile(self, fileContent):
         headerEnd = ["%", "M95"]
@@ -387,7 +387,7 @@ class excellonParser:
 
     def parseContent(self, content, filename):
         excellonFormat = self.excellonFormatFromHeader
-        divisor = 10.0**(6 - (excellonFormat.decimalPart))
+        divisor = 10.0**(4 - excellonFormat.decimalPart)
         lastCoordinates = None
         currtool = None
 
@@ -409,7 +409,7 @@ class excellonParser:
                 if currtool is None:
                     raise RuntimeError, 'File %s has plunge command without previous tool selection' % filename
                 command.tool = currtool
-                self.commands.append(command)
+                self.commands[layer].append(command)
                 continue
 
             slotCommand = SlotCommand.fromString(line, excellonFormat, divisor)
@@ -417,7 +417,7 @@ class excellonParser:
                 if currtool is None:
                     raise RuntimeError, 'File %s has plunge command without previous tool selection' % filename
                 slotCommand.tool = currtool
-                self.commands.append(slotCommand)
+                self.commands[layer].append(slotCommand)
                 continue
 
             # It had better be an ignorable
@@ -442,10 +442,10 @@ class excellonParser:
 
         self.parseContent(content, filename)
 
-    def toJsonFile(self, filename):
+    def toJsonFile(self, filename, layer):
         import json
         commandsList = []
-        for command in self.commands:
+        for command in self.commands[layer]:
             commandsList.append(command.toDict())
 
         fileContent = {'OryginalFileFormat': self.excellonFormatFromHeader.toDict(), 'ToolList': self.toolList, 'Commands': commandsList }
@@ -464,9 +464,9 @@ class excellonParser:
         return xdiam
 
     #deprecated functin should be removed when other part of gerbmerge will be changed
-    def getxcommands(self):
+    def getxcommands(self, layer):
         xcommands = {}
-        for command in self.commands:
+        for command in self.commands[layer]:
             if isinstance(command, PlungeCommand):
                 tmp = (command.getCoordinates().x, command.getCoordinates().y, None, None)
             else:
