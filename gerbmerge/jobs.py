@@ -1236,7 +1236,11 @@ def rotateJob(job, degrees = 90, firstpass = True):
   # We also have to take aperture change commands and
   # replace them with the new aperture code if we have
   # a rotation.
-  offset = job.maxy-job.miny
+  # [andreika]: add 'fixedrotationorigin' setting to disable shifting
+  if config.Config['fixedrotationorigin']:
+    offset = 0
+  else:
+    offset = job.maxy-job.miny
   for layername in job.commands.keys():
     J.commands[layername] = []
     J.apertures[layername] = []
