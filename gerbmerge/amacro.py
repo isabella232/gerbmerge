@@ -63,9 +63,16 @@ def rotatexy(x,y):
   # Rotate point (x,y) counterclockwise 90 degrees about the origin
   return (-y,x)
 
-def rotatexypair(L, ix):
-  # Rotate list items L[ix],L[ix+1] by 90 degrees
-  L[ix],L[ix+1] = rotatexy(L[ix],L[ix+1])
+def rotatexypair(L, flip, ix):
+  if (flip == 1):
+    # flip horizontally
+    L[ix],L[ix+1] = (-L[ix], L[ix+1])
+  elif (flip == -1):
+    # flip vertically
+    L[ix],L[ix+1] = (L[ix], -L[ix+1])
+  else:
+    # Rotate list items L[ix],L[ix+1] by 90 degrees
+    L[ix],L[ix+1] = rotatexy(L[ix],L[ix+1])
 
 def swapxypair(L, ix):
   # Swap two list elements
@@ -79,9 +86,10 @@ def rotatetheta(th):
     th -= 360
   return th
 
-def rotatethelem(L, ix):
+def rotatethelem(L, flip, ix):
   # Increase angle th by +90 degrees for a list element
-  L[ix] = rotatetheta(L[ix])
+  if (flip == 0):
+    L[ix] = rotatetheta(L[ix])
 
 class ApertureMacroPrimitive:
   def __init__(self, code=-1, fields=None):
@@ -164,34 +172,34 @@ class ApertureMacroPrimitive:
       print '='*20
       raise
 
-  def rotate(self):
+  def rotate(self, flip):
     if self.code == 1:      # Circle: [andreika]: FIX circle rotation
-      rotatexypair(self.parms, 2)
+      rotatexypair(self.parms, flip, 2)
     elif self.code in (2,20): # Line (vector): fields (2,3) and (4,5) must be rotated, no need to
                               # rotate field 6
-      rotatexypair(self.parms, 2)
-      rotatexypair(self.parms, 4)
+      rotatexypair(self.parms, flip, 2)
+      rotatexypair(self.parms, flip, 4)
     elif self.code == 21:     # Line (center): fields (3,4) must be rotated, and field 5 incremented by +90
-      rotatexypair(self.parms, 3)
-      rotatethelem(self.parms, 5)
+      rotatexypair(self.parms, flip, 3)
+      rotatethelem(self.parms, flip, 5)
     elif self.code == 22:     # Line (lower-left): fields (3,4) must be rotated, and field 5 incremented by +90
-      rotatexypair(self.parms, 3)
-      rotatethelem(self.parms, 5)
+      rotatexypair(self.parms, flip, 3)
+      rotatethelem(self.parms, flip, 5)
     elif self.code == 4:      # Outline: fields (2,3), (4,5), etc. must be rotated, the last field need not be incremented
       ix = 2
       for pts in range(self.parms[1]):    # parms[1] is the number of points
-        rotatexypair(self.parms, ix)
+        rotatexypair(self.parms, flip, ix)
         ix += 2
       #rotatethelem(self.parms, ix)
     elif self.code == 5:      # Polygon: fields (2,3) must be rotated, and field 5 incremented by +90
-      rotatexypair(self.parms, 2)
-      rotatethelem(self.parms, 5)
+      rotatexypair(self.parms, flip, 2)
+      rotatethelem(self.parms, flip, 5)
     elif self.code == 6:      # Moire: fields (0,1) must be rotated, and field 8 incremented by +90
-      rotatexypair(self.parms, 0)
-      rotatethelem(self.parms, 8)
+      rotatexypair(self.parms, flip, 0)
+      rotatethelem(self.parms, flip, 8)
     elif self.code == 7:      # Thermal: fields (0,1) must be rotated, and field 5 incremented by +90
-      rotatexypair(self.parms, 0)
-      rotatethelem(self.parms, 5)
+      rotatexypair(self.parms, flip, 0)
+      rotatethelem(self.parms, flip, 5)
 
   def __str__(self):
     # Construct a string with ints as ints and floats as floats
@@ -221,17 +229,22 @@ class ApertureMacro:
   def add(self, prim):
     self.prim.append(prim)
 
-  def rotate(self):
+  def rotate(self, flip):
     for prim in self.prim:
-      prim.rotate()
+      prim.rotate(flip)
 
-  def rotated(self):
+  def rotated(self, flip):
     # Return copy of ourselves, rotated. Replace 'R' as the first letter of the
     # macro name.  We don't append because we like to be able to count the
     # number of aperture macros by stripping off the leading character.
     M = copy.deepcopy(self)
-    M.rotate()
-    M.name = 'R'+M.name[1:]
+    M.rotate(flip)
+    if (flip == 1):
+      M.name = 'FH'+M.name[1:]
+    elif (flip == -1):
+      M.name = 'FV'+M.name[1:]
+    else:
+      M.name = 'R'+M.name[1:]
     return M
 
   def dump(self, fid=sys.stdout):
@@ -322,7 +335,7 @@ if __name__=="__main__":
   # A thermal in the second quadrant, beyond the right triangle
   M.add(ApertureMacroPrimitive(7, ('-0.07', '0.07', '0.03', '0.02', '0.005', '15')))
 
-  MR = M.rotated()
+  MR = M.rotated(0)
 
   # Generate the Gerber so we can view it
   fid = file('amacro.ger', 'wt')

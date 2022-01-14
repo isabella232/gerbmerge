@@ -1337,26 +1337,46 @@ class JobLayout:
   def jobarea(self):
     return self.job.jobarea()
 
-def rotateJob(job, degrees = 90, firstpass = True):
+def rotateJob(job, degrees = 90, flip = 0, firstpass = True):
   """Create a new job from an existing one, rotating by specified degrees in 90 degree passes"""
   GAT = config.GAT
   GAMT = config.GAMT
-  ##print "rotating job:", job.name, degrees, firstpass
+  ##print "rotating job:", job.name, degrees, flip, firstpass
   if firstpass:
+    rotatedFlipped = ""
     if degrees == 270:
-        J = Job(job.name+'*rotated270')
+        rotatedFlipped += '*rotated270'
     elif degrees == 180:
-        J = Job(job.name+'*rotated180')
-    else:
-        J = Job(job.name+'*rotated90')
+        rotatedFlipped += '*rotated180'
+    elif degrees == 90:
+        rotatedFlipped += '*rotated90'
+    if flip == 1:
+        rotatedFlipped += '*flippedH'
+    elif flip == -1:
+        rotatedFlipped += '*flippedV'
+    J = Job(job.name + rotatedFlipped)
   else:
     J = Job(job.name)
 
   # Keep the origin (lower-left) in the same place
-  J.maxx = job.minx + job.maxy-job.miny
-  J.maxy = job.miny + job.maxx-job.minx
-  J.minx = job.minx
-  J.miny = job.miny
+  if degrees != 0:
+    J.maxx = job.minx + job.maxy-job.miny
+    J.maxy = job.miny + job.maxx-job.minx
+    J.minx = job.minx
+    J.miny = job.miny
+    doFlip = 0
+  else:
+    doFlip = flip
+    if flip == 1:
+      J.minx = job.maxx
+      J.maxx = job.minx
+      J.miny = job.miny
+      J.maxy = job.maxy
+    elif flip == -1:
+      J.minx = job.minx
+      J.maxx = job.maxx
+      J.miny = job.maxy
+      J.maxy = job.miny
 
   RevGAT = config.buildRevDict(GAT)   # RevGAT[hash] = aperturename
   RevGAMT = config.buildRevDict(GAMT) # RevGAMT[hash] = aperturemacroname
@@ -1383,7 +1403,7 @@ def rotateJob(job, degrees = 90, firstpass = True):
         continue
 
       # Must rotate the aperture
-      APR = A.rotated(RevGAMT)
+      APR = A.rotated(RevGAMT, doFlip)
 
       # Does it already exist in the GAT?
       hash = APR.hash()
@@ -1452,10 +1472,17 @@ def rotateJob(job, degrees = 90, firstpass = True):
           J.apertures[layername].append(cmd)
         continue
 
-      # (X,Y) --> (-Y,X) effects a 90-degree counterclockwise shift
-      # Adding 'offset' to -Y maintains the lower-left origin of (minx,miny).
-      newx = -(y - job.miny) + job.minx + offset
-      newy = (x-job.minx) + job.miny
+      if (doFlip == 1):
+        newx = job.maxx - (x - job.minx)
+        newy = y
+      elif (doFlip == -1):
+        newx = x
+        newy = job.maxy - (y - job.miny)
+      else:
+        # (X,Y) --> (-Y,X) effects a 90-degree counterclockwise shift
+        # Adding 'offset' to -Y maintains the lower-left origin of (minx,miny).
+        newx = -(y - job.miny) + job.minx + offset
+        newy = (x-job.minx) + job.miny
 
       # For circular interpolation commands, (I,J) components are always relative
       # so we do not worry about offsets, just reverse their sense, i.e., I becomes J
@@ -1483,15 +1510,29 @@ def rotateJob(job, degrees = 90, firstpass = True):
 # add metric support (1/1000 mm vs. 1/100,000 inch)
 # NOTE: There don't appear to be any need for a change. The usual x10 factor seems to apply
 
-      newx = -(10*y - job.miny) + job.minx + offset
-      newy =  (10*x - job.minx) + job.miny
+      if (doFlip == 1):
+        newx = job.maxx - (10*x - job.minx)
+        newy = 10*y
+      elif (doFlip == -1):
+        newx = 10*x
+        newy = job.maxy - (10*y - job.miny)
+      else:
+        newx = -(10*y - job.miny) + job.minx + offset
+        newy =  (10*x - job.minx) + job.miny
 
       newx = int(round(newx/10.0))
       newy = int(round(newy/10.0))
 
       if stop_x is not None:
-        newstop_x = -(10*stop_y - job.miny) + job.minx + offset
-        newstop_y =  (10*stop_x - job.minx) + job.miny
+        if (doFlip == 1):
+          newstop_x = job.maxx - (10*stop_x - job.minx)
+          newstop_y = 10*stop_y
+        elif (doFlip == -1):
+          newstop_x = 10*stop_x
+          newstop_y = job.maxy - (10*stop_y - job.miny)
+        else:
+          newstop_x = -(10*stop_y - job.miny) + job.minx + offset
+          newstop_y =  (10*stop_x - job.minx) + job.miny
 
         newstop_x = int(round(newstop_x/10.0))
         newstop_y = int(round(newstop_y/10.0))
@@ -1500,10 +1541,12 @@ def rotateJob(job, degrees = 90, firstpass = True):
         newstop_y = None
       J.xcommands[tool].append((newx,newy,newstop_x,newstop_y))
 
-  # Rotate some more if required
+  if (degrees == 0):
+    flip = 0
+  # Rotate or flip some more if required
   degrees -= 90
-  if degrees > 0:
-    return rotateJob(J, degrees, False)
+  if degrees > 0 or flip != 0:
+    return rotateJob(J, degrees, flip, False)
   else:
     ##print "rotated:", J.name
     return J
