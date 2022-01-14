@@ -1,0 +1,1 @@
+python3 ../../gerbmerge/gerbmerge.py --place-file=board_place.txt board.cfg
