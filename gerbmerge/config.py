@@ -45,6 +45,7 @@ Config = {
    'fabricationdrawingtext': None,   # Name of file containing text to write to fab drawing
    'excellondecimals': 4,            # Number of digits after the decimal point in input Excellon files
    'excellonleadingzeros': 0,        # Generate leading zeros in merged Excellon output file
+   'outlinelayers': None,	         # e.g., *toplayer, *bottomlayer
    'outlinelayerfile': None,         # Name of file to which to write simple box outline, or None
    'scoringfile': None,              # Name of file to which to write scoring data, or None
    'scoringtype': None,              # Scoringmethod, vgroove, mousebite or None
@@ -259,6 +260,8 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     Config['cutlinelayers'] = parseStringList(Config['cutlinelayers'])
   if Config['cropmarklayers']:
     Config['cropmarklayers'] = parseStringList(Config['cropmarklayers'])
+  if Config['outlinelayers']:
+    Config['outlinelayers'] = parseStringList(Config['outlinelayers'])
 
 # setup default x & y spacing, taking into account metric units
 #    if (xspacing == 0):
