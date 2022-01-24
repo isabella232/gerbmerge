@@ -8,7 +8,6 @@ xtdef_pat = re.compile(r'^(T\d+)(?:F\d+)?(?:S\d+)?C([0-9.]+)$') # Tool+diameter 
 xtdef2_pat = re.compile(r'^(T\d+)C([0-9.]+)(?:F\d+)?(?:S\d+)?$') # Tool+diameter definition with optional
                                                                 # feed/speed at the end (for OrCAD)
 
-
 XIgnoreList = ( \
   re.compile(r'^%$'),
   re.compile(r'^M30$'),   # End of job
@@ -146,6 +145,7 @@ class Command:
         raise NotImplementedError("Subclass must implement abstract method")
     def toDict(self):
         raise NotImplementedError("Subclass must implement abstract method")
+
 #---------------------------------------------------------------------
 class PlungeCommand(Command):
     def __init__(self, coordinates, tool=None):
@@ -157,17 +157,17 @@ class PlungeCommand(Command):
 
     @staticmethod
     def fromString(string, excelonFormat, lastCoordinates, divisor):
-        xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)(?:G85X([+-]?\d+)Y([+-]?\d+))?$')    # Plunge command with optional G85
-        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)(?:G85X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*))?$')    # Plunge command with optional G85
+        xydraw_pat  = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)?$')    # Plunge command without G85
+        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)?$')    # Plunge command without G85
         xdraw_pat = re.compile(r'^X([+-]?\d+)$')    # Plunge command, repeat last Y value
         ydraw_pat = re.compile(r'^Y([+-]?\d+)$')    # Plunge command, repeat last X value
         match = xydraw_pat.match(string)
         if match:
-            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.getDigits(), excelonFormat.zeroSuppression)
+            x, y = xln2tenthou(match.groups(), divisor, excelonFormat.getDigits(), excelonFormat.zeroSuppression)
             return PlungeCommand(Coordinates(x, y))
         match = xydraw_pat2.match(string)
         if match:
-            x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.getDigits())
+            x, y = xln2tenthou2(match.groups(), divisor, excelonFormat.getDigits())
             return PlungeCommand(Coordinates(x, y))
         match = xdraw_pat.match(string)
         if match:
@@ -204,16 +204,16 @@ class SlotCommand(Command):
         self.tool = tool
 
     @staticmethod
-    def fromString(string, excellonFormat, divisor):
-        xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)(?:G85X([+-]?\d+)Y([+-]?\d+))?$')    # Plunge command with optional G85
-        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)(?:G85X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*))?$')    # Plunge command with optional G85
+    def fromString(string, excelonFormat, divisor):
+        xydraw_pat = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)G85X([+-]?\d+)Y([+-]?\d+)$')    # Plunge command with G85
+        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)G85X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)$')    # Plunge command with G85
         match = xydraw_pat.match(string)
         if match:
-            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.digits, excelonFormat.zeroSuppression)
+            x, y, stop_x, stop_y = xln2tenthou(match.groups(), divisor, excelonFormat.getDigits(), excelonFormat.zeroSuppression)
             return SlotCommand(Coordinates(x, y), Coordinates(stop_x, stop_y))
         match = xydraw_pat2.match(string)
         if match:
-            x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.digits)
+            x, y, stop_x, stop_y = xln2tenthou2(match.groups(), divisor, excelonFormat.getDigits())
             return SlotCommand(Coordinates(x, y), Coordinates(stop_x, stop_y))
         return None
 
@@ -225,6 +225,7 @@ class SlotCommand(Command):
 
     def getCoordinates(self):
         return (self.startCoordinates, self.endCoordinates)
+
 #---------------------------------------------------------------------
 class Tool:
     def __init__(self, number, diameter):
@@ -265,6 +266,7 @@ class Tool:
 
     def toDict(self):
         return dict({'tool': self.number, 'diam': self.diameter})
+
 #---------------------------------------------------------------------
 class ToolchangeCommand:
     def __init__(self, toolnumber):
@@ -470,16 +472,14 @@ class excellonParser:
             if isinstance(command, PlungeCommand):
                 tmp = (command.getCoordinates().x, command.getCoordinates().y, None, None)
             else:
-                tmp = (command.getCoorcinates()(0).x, command.getCoorcinates()(0).y, command.getCoorcinates()(1).x, command.getCoorcinates()(1).y)
+                tmpStart, tmpStop = command.getCoordinates()
+                tmp = (tmpStart.x, tmpStart.y, tmpStop.x, tmpStop.y)
 
             if command.tool.toDict()['tool'] in xcommands:
                 xcommands[command.tool.toDict()['tool']].append(tmp)
             else:
                 xcommands[command.tool.toDict()['tool']] = [tmp]
         return xcommands
-
-
-
 
 def main():
     import argparse
@@ -501,4 +501,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
