@@ -73,7 +73,7 @@ def _tile_search2(Jobs, X, Y, cfg=config.Config):
 
       T.removeInlets(minInletSize)
 
-      if r.choice([0,1]):
+      if rjob == None or r.choice([0,1]):
         addpoints = T.validAddPoints(Xdim+xspacing,Ydim+yspacing)
         if not addpoints:
           break

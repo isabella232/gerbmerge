@@ -129,7 +129,7 @@ def _tile_search1(Jobs, TSoFar, firstAddPoint, cfg=config.Config):
     # As an optimization, do not construct add-points for the rotated
     # job if the job is a square (duh).
     addpoints1 = TSoFar.validAddPoints(Xdim+xspacing,Ydim+yspacing)     # unrotated job
-    if Xdim != Ydim:
+    if rjob != None and Xdim != Ydim:
       addpoints2 = TSoFar.validAddPoints(Ydim+xspacing,Xdim+yspacing)   # rotated job
     else:
       addpoints2 = []

@@ -345,7 +345,7 @@ def tile_jobs(Jobs):
     Ydim = job.height_in()
     if Xdim == Ydim or not job.Rotate:
       ##NOTE: Never rotate square boards to save production cost
-      rjob = job
+      rjob = None
     else:
       ##NOTE: This will only try 90 degree rotations though 180 & 270 are available
       rjob = jobs.rotateJob(job, 90)
