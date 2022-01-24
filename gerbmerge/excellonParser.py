@@ -157,8 +157,8 @@ class PlungeCommand(Command):
 
     @staticmethod
     def fromString(string, excelonFormat, lastCoordinates, divisor):
-        xydraw_pat  = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)?$')    # Plunge command without G85
-        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)?$')    # Plunge command without G85
+        xydraw_pat  = re.compile(r'^X([+-]?\d+)Y([+-]?\d+)$')    # Plunge command without G85
+        xydraw_pat2 = re.compile(r'^X([+-]?\d+\.\d*)Y([+-]?\d+\.\d*)$')    # Plunge command without G85
         xdraw_pat = re.compile(r'^X([+-]?\d+)$')    # Plunge command, repeat last Y value
         ydraw_pat = re.compile(r'^Y([+-]?\d+)$')    # Plunge command, repeat last X value
         match = xydraw_pat.match(string)
