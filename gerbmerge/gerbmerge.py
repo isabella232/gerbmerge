@@ -190,10 +190,14 @@ def writeExcellonFooter(fid):
   fid.write('M30\n')
 
 def writeExcellonTool(fid, tool, size=None):
-  if size:
-    fid.write('%sC%.3f\n' % (tool, size))
+  if size and config.Config['measurementunits'] == 'inch':
+    fmtstr = '%sC%.4f\n'
+  elif size:
+    fmtstr = '%sC%.3f\n'
   else:
     fid.write('%s\n' % (tool, ))
+    return
+  fid.write(fmtstr % (tool, size))
 
 def writeFiducials(fid, drawcode, OriginX, OriginY, MaxXExtent, MaxYExtent):
   """Place fiducials at arbitrary points. The FiducialPoints list in the config specifies
