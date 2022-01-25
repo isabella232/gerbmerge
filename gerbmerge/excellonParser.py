@@ -346,14 +346,12 @@ class excellonParser:
             match = fileFormat.match(line)
             if match:
                 numbersStr, decimalsStr = match.groups()
-                print numbersStr + ':' + decimalsStr
                 self.excellonFormatFromHeader.integerPart = int(numbersStr)
                 self.excellonFormatFromHeader.decimalPart = int(decimalsStr)
 
             match = plating.match(line)
             if match:
                 platingOption = match.group(1)
-            #print platingOption
 
             tool = Tool.fromString(line, filename)
             if tool:

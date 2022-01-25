@@ -171,7 +171,7 @@ def writeExcellonHeader(fid):
   elif config.Config['excellonleadingzeros'] == 0:
     zerosDef = ",TZ"
     zerosFormat = ' / suppress trailing zeros'
-  fid.write(';FORMAT={%d:%d/ absolute / %s%s}\n' % (6-config.Config['excellondecimals']+2, config.Config['excellondecimals']-2, config.Config['measurementunits'], zerosFormat, ))
+  fid.write(';FORMAT={%d:%d/ absolute / %s%s}\n' % (config.Config['excellondecimals']-2, 6-config.Config['excellondecimals']+2, config.Config['measurementunits'], zerosFormat, ))
   if config.Config['measurementunits'] == 'inch':
     fid.write("INCH%s\n" % zerosDef)
   else: # metric - mm
