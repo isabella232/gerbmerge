@@ -168,17 +168,17 @@ def parseAperture(s, knownMacroNames):
         code, dimx, dimy = match.groups()
 
       if ap[0] in ('Macro',):
-        if knownMacroNames.has_key(dimx):
+        if dimx in knownMacroNames:
           dimx = knownMacroNames[dimx]    # dimx is now GLOBAL, permanent macro name (e.g., 'M2')
         else:
-          raise RuntimeError, 'Aperture Macro name "%s" not defined' % dimx
+          raise RuntimeError('Aperture Macro name "%s" not defined' % dimx)
       else:
         try:
           dimx = float(dimx)
           if dimy:
             dimy = float(dimy)
         except:
-          raise RuntimeError, "Illegal floating point aperture size"
+          raise RuntimeError("Illegal floating point aperture size")
 
       return Aperture(ap, code, dimx, dimy)
 
@@ -221,7 +221,7 @@ def constructApertureTable(fileList):
     # [andreika]: units conversion
     units_div = 1.0
 
-    fid = file(fname,'rt')
+    fid = open(fname,'rt')
     for line in fid:
       # Get rid of CR
       line = line.replace('\x0D', '')
@@ -276,19 +276,19 @@ def constructApertureTable(fileList):
 
   # Now, go through and assign sequential codes to all apertures
   code = 10
-  for val in AT.values():
+  for val in list(AT.values()):
     key = 'D%d' % code
     GAT[key] = val
     val.code = key
     code += 1
 
   if 0:
-    keylist = config.GAT.keys()
+    keylist = list(config.GAT.keys())
     keylist.sort()
-    print 'Apertures'
-    print '========='
+    print('Apertures')
+    print('=========')
     for key in keylist:
-      print '%s' % config.GAT[key]
+      print('%s' % config.GAT[key])
     sys.exit(0)
 
 def findHighestApertureCode(keys):
@@ -304,7 +304,7 @@ def findHighestApertureCode(keys):
 def addToApertureTable(AP):
   GAT = config.GAT
 
-  lastCode = findHighestApertureCode(GAT.keys())
+  lastCode = findHighestApertureCode(list(GAT.keys()))
   code = 'D%d' % (lastCode+1)
   GAT[code] = AP
   AP.code = code
@@ -315,7 +315,7 @@ def findInApertureTable(AP):
   """Return 'D10', for example in response to query for an object
      of type Aperture()"""
   hash = AP.hash()
-  for key, val in config.GAT.items():
+  for key, val in list(config.GAT.items()):
     if hash==val.hash():
       return key
 
@@ -335,16 +335,16 @@ def findOrAddAperture(AP):
 if __name__=="__main__":
   constructApertureTable(sys.argv[1:])
 
-  keylist = config.GAMT.keys()
+  keylist = list(config.GAMT.keys())
   keylist.sort()
-  print 'Aperture Macros'
-  print '==============='
+  print('Aperture Macros')
+  print('===============')
   for key in keylist:
-    print '%s' % config.GAMT[key]
+    print('%s' % config.GAMT[key])
 
-  keylist = config.GAT.keys()
+  keylist = list(config.GAT.keys())
   keylist.sort()
-  print 'Apertures'
-  print '========='
+  print('Apertures')
+  print('=========')
   for key in keylist:
-    print '%s' % config.GAT[key]
+    print('%s' % config.GAT[key])

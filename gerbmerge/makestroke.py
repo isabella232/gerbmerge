@@ -93,7 +93,7 @@ def writeChar(fid, c, X, Y, degrees):
   try:
     glyph = strokes.StrokeMap[c]
   except:
-    raise RuntimeError, 'No glyph for character %s' % hex(ord(c))
+    raise RuntimeError('No glyph for character %s' % hex(ord(c)))
 
   writeGlyph(fid, glyph, X, Y, degrees, c)
 
@@ -140,7 +140,7 @@ if __name__=="__main__":
   s = string.digits+string.letters+string.punctuation
   #s = "The quick brown fox jumped over the lazy dog!"
 
-  fid = file('test.ger','wt')
+  fid = open('test.ger','wt')
   fid.write("""G75*
 G70*
 %OFA0B0*%

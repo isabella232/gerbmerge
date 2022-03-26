@@ -15,7 +15,7 @@ import math
 
 # Ensure all list elements are unique
 def uniqueify(L):
-  return {}.fromkeys(L).keys()
+  return list({}.fromkeys(L).keys())
 
 # This function rounds an (X,Y) point to integer co-ordinates
 def roundPoint(pt):
@@ -343,4 +343,4 @@ if __name__=="__main__":
   assert isRect1InRect2( (100,100,500,500), (0,600,300,300) ) == False
   assert isRect1InRect2( (100,100,500,500), (0,0,500,500) )   == True
 
-  print 'All tests pass'
+  print('All tests pass')
