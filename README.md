@@ -1,3 +1,5 @@
+rusEFI note: this fork uses python 3!
+
 <P><FONT SIZE="+2">GerbMerge -- A Gerber-file merging program</FONT></P>
 
 <P><HR ALIGN=LEFT></P>
