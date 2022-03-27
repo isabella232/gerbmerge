@@ -112,7 +112,7 @@ class ApertureMacroPrimitive:
       valids = None
 
     if valids is None:
-      raise RuntimeError, 'Undefined aperture macro primitive code %d' % code
+      raise RuntimeError('Undefined aperture macro primitive code %d' % code)
 
     # We expect exactly the number of fields required, except for macro
     # type 4 which is an outline and has a variable number of points.
@@ -126,18 +126,18 @@ class ApertureMacroPrimitive:
     #   - last field is rotation
     if self.code==4:
       if len(fields) < 2:
-        raise RuntimeError, 'Outline macro primitive has way too few fields'
+        raise RuntimeError('Outline macro primitive has way too few fields')
 
       try:
         N = int(fields[1])
       except:
-        raise RuntimeError, 'Outline macro primitive has non-integer number of points'
+        raise RuntimeError('Outline macro primitive has non-integer number of points')
 
       if len(fields) != (5+2*N):
-        raise RuntimeError, 'Outline macro primitive has %d fields...expecting %d fields' % (len(fields), 3+2*N)
+        raise RuntimeError('Outline macro primitive has %d fields...expecting %d fields' % (len(fields), 3+2*N))
     else:
       if len(fields) != len(valids):
-        raise RuntimeError, 'Macro primitive has %d fields...expecting %d fields' % (len(fields), len(valids))
+        raise RuntimeError('Macro primitive has %d fields...expecting %d fields' % (len(fields), len(valids)))
 
     # Convert each parameter on the input line to an entry in the self.parms
     # list, using either int() or float() conversion.
@@ -150,7 +150,7 @@ class ApertureMacroPrimitive:
       try:
         self.parms.append(converter(fields[parmix]))
       except:
-        raise RuntimeError, 'Aperture macro primitive parameter %d has incorrect type' % (parmix+1)
+        raise RuntimeError('Aperture macro primitive parameter %d has incorrect type' % (parmix+1))
 
   def setFromLine(self, line):      
     # Account for DOS line endings and get rid of line ending and '*' at the end
@@ -164,12 +164,12 @@ class ApertureMacroPrimitive:
       try:
         code = int(fields[0])
       except:
-        raise RuntimeError, 'Illegal aperture macro primitive code "%s"' % fields[0]
+        raise RuntimeError('Illegal aperture macro primitive code "%s"' % fields[0])
       self.setFromFields(code, fields[1:])
     except:
-      print '='*20
-      print "==> ", line
-      print '='*20
+      print('='*20)
+      print("==> ", line)
+      print('='*20)
       raise
 
   def rotate(self, flip):
@@ -283,7 +283,7 @@ def parseApertureMacro(s, fid):
 
       M.add(P)
     else:
-      raise RuntimeError, "Premature end-of-file while parsing aperture macro"
+      raise RuntimeError("Premature end-of-file while parsing aperture macro")
   else:
     return None
 
@@ -295,7 +295,7 @@ def addToApertureMacroTable(AM):
 
   # Must sort keys by integer value, not string since 99 comes before 100
   # as an integer but not a string.
-  keys = map(int, map(lambda K: K[1:], GAMT.keys()))
+  keys = list(map(int, [K[1:] for K in list(GAMT.keys())]))
   keys.sort()
 
   if len(keys):
@@ -338,25 +338,23 @@ if __name__=="__main__":
   MR = M.rotated(0)
 
   # Generate the Gerber so we can view it
-  fid = file('amacro.ger', 'wt')
-  print >> fid, \
-"""G75*
+  fid = open('amacro.ger', 'wt')
+  print("""G75*
 G70*
 %OFA0B0*%
 %FSLAX24Y24*%
 %IPPOS*%
-%LPD*%"""
+%LPD*%""", file=fid)
   M.writeDef(fid)
   MR.writeDef(fid)
-  print >> fid, \
-"""%ADD10TEST*%
+  print("""%ADD10TEST*%
 %ADD11TESTR*%
 D10*
 X010000Y010000D03*
 D11*
 X015000Y010000D03*
-M02*"""
+M02*""", file=fid)
   fid.close()
 
-  print M
-  print MR
+  print(M)
+  print(MR)

@@ -34,7 +34,7 @@ def cluster(drills, tolerance, debug = _DEBUG):
     debug_print("Clustering drill sizes ...", True)
 
     # Loop through all drill sizes
-    sizes = drills.keys()
+    sizes = list(drills.keys())
     sizes.sort()
     for size in sizes:
         
@@ -106,7 +106,7 @@ def remap(jobs, globalToolMap, debug = _DEBUG):
         debug_print( str(job.xcommands) )
         new_tools = {}
         new_commands = {}
-        for tool, diam in job.xdiam.items():
+        for tool, diam in list(job.xdiam.items()):
         
             ##debug_print("\n  Current tool: " + tool + " (" + str_d(diam) + ")")
         
@@ -147,9 +147,9 @@ def debug_print(text, status = False, newLine = True):
     
     if _DEBUG or (status and _STATUS):
         if newLine:
-            print " ", text
+            print(" ", text)
         else:
-            print " ", text,
+            print(" ", text, end=' ')
             
 def str_d(drills):
     """
@@ -180,7 +180,7 @@ def drillsToString(drills):
     """
     string = ""
     
-    drills = drills.items()
+    drills = list(drills.items())
     drills.sort()
     for size, drill in drills:
         string += drill + " = " + str_d(size) + "\n  "
@@ -194,7 +194,7 @@ def drillsToString(drills):
 if __name__=="__main__":
   import random
   
-  print "  Clustering random drills..."
+  print("  Clustering random drills...")
 
   old = {}
   tool_num = 0

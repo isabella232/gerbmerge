@@ -177,7 +177,7 @@ def mergeLines(Lines):
 
   # Extend horizontal lines
   NewHLines = {}
-  for yval,lines in HLines.items():
+  for yval,lines in list(HLines.items()):
     # yval is the Y ordinate of this group of lines. lines is the set of all
     # lines with this Y ordinate.
     NewHLines[yval] = []
@@ -199,7 +199,7 @@ def mergeLines(Lines):
 
   # Extend vertical lines
   NewVLines = {}
-  for xval,lines in VLines.items():
+  for xval,lines in list(VLines.items()):
     # xval is the X ordinate of this group of lines. lines is the set of all
     # lines with this X ordinate.
     NewVLines[xval] = []
@@ -228,7 +228,7 @@ def mergeLines(Lines):
   # or within each other. We will have to sort all horizontal lines by their
   # Y ordinates and group them according to Y ordinates that are close enough
   # to each other.
-  yvals = HLines.keys()
+  yvals = list(HLines.keys())
   clusters = clusterOrdinates(yvals)  # A list of clustered tuples containing yvals
 
   for cluster in clusters:
@@ -240,7 +240,7 @@ def mergeLines(Lines):
     # Y ordinate. Merge them together.
     NewHLines.extend(mergeHLines(clusterLines))
 
-  xvals = VLines.keys()
+  xvals = list(VLines.keys())
   clusters = clusterOrdinates(xvals)
   for cluster in clusters:
     clusterLines = []

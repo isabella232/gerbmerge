@@ -15,7 +15,7 @@ http://github.com/unwireddevices/gerbmerge
 """
 
 import sys
-import ConfigParser
+import configparser
 import re
 import string
 
@@ -116,7 +116,7 @@ MinimumFeatureDimension = {}
 # hash string. The value is the aperture code (e.g., 'D10') or macro name (e.g., 'M5').
 def buildRevDict(D):
   RevD = {}
-  for key,val in D.items():
+  for key,val in list(D.items()):
     RevD[val.hash()] = key
   return RevD
 
@@ -127,12 +127,12 @@ def parseStringList(L):
   if 0:
     if L[0]=="'":
       if L[-1] != "'":
-        raise RuntimeError, "Illegal configuration string '%s'" % L
+        raise RuntimeError("Illegal configuration string '%s'" % L)
       L = L[1:-1]
 
     elif L[0]=='"':
       if L[-1] != '"':
-        raise RuntimeError, "Illegal configuration string '%s'" % L
+        raise RuntimeError("Illegal configuration string '%s'" % L)
       L = L[1:-1]
 
   # This pattern matches quotes at the beginning and end...quotes must match
@@ -153,14 +153,14 @@ def parseToolList(fname):
   TL = {}
 
   try:
-    fid = file(fname, 'rt')
-  except Exception, detail:
-    raise RuntimeError, "Unable to open tool list file '%s':\n  %s" % (fname, str(detail))
+    fid = open(fname, 'rt')
+  except Exception as detail:
+    raise RuntimeError("Unable to open tool list file '%s':\n  %s" % (fname, str(detail)))
 
   pat_in  = re.compile(r'\s*(T\d+)\s+([0-9.]+)\s*in\s*')
   pat_mm  = re.compile(r'\s*(T\d+)\s+([0-9.]+)\s*mm\s*')
   pat_mil = re.compile(r'\s*(T\d+)\s+([0-9.]+)\s*(?:mil)?')
-  for line in fid.xreadlines():
+  for line in fid:
     line = string.strip(line)
     if (not line) or (line[0] in ('#', ';')): continue
 
@@ -182,7 +182,7 @@ def parseToolList(fname):
     try:
       size = float(size)
     except:
-      raise RuntimeError, "Tool size in file '%s' is not a valid floating-point number:\n  %s" % (fname,line)
+      raise RuntimeError("Tool size in file '%s' is not a valid floating-point number:\n  %s" % (fname,line))
 
     if mil:
       size = size*0.001  # Convert mil to inches
@@ -192,8 +192,8 @@ def parseToolList(fname):
     # Canonicalize tool so that T1 becomes T01
     tool = 'T%02d' % int(tool[1:])
 
-    if TL.has_key(tool):
-      raise RuntimeError, "Tool '%s' defined more than once in tool list file '%s'" % (tool,fname)
+    if tool in TL:
+      raise RuntimeError("Tool '%s' defined more than once in tool list file '%s'" % (tool,fname))
 
     TL[tool]=size
   fid.close()
@@ -215,38 +215,38 @@ def parseToolList(fname):
 def parseConfigFile(fname, Config=Config, Jobs=Jobs):
   global DefaultToolList
 
-  CP = ConfigParser.ConfigParser()
-  CP.readfp(file(fname.rstrip(),'rt'))
+  CP = configparser.ConfigParser()
+  CP.readfp(open(fname.rstrip(),'rt'))
 
   # First parse global options
   if CP.has_section('Options'):
     for opt in CP.options('Options'):
       # Is it one we expect
-      if Config.has_key(opt):
+      if opt in Config:
         # Yup...override it
         Config[opt] = CP.get('Options', opt)
 
-      elif CP.defaults().has_key(opt):
+      elif opt in CP.defaults():
         pass   # Ignore DEFAULTS section keys
 
       elif opt in ('fabricationdrawing', 'outlinelayer'):
-        print '*'*73
-        print '\nThe FabricationDrawing and OutlineLayer configuration options have been'
-        print 'renamed as of GerbMerge version 1.0. Please consult the documentation for'
-        print 'a description of the new options, then modify your configuration file.\n'
-        print '*'*73
+        print('*'*73)
+        print('\nThe FabricationDrawing and OutlineLayer configuration options have been')
+        print('renamed as of GerbMerge version 1.0. Please consult the documentation for')
+        print('a description of the new options, then modify your configuration file.\n')
+        print('*'*73)
         sys.exit(1)
       else:
-        raise RuntimeError, "Unknown option '%s' in [Options] section of configuration file" % opt
+        raise RuntimeError("Unknown option '%s' in [Options] section of configuration file" % opt)
   else:
-    raise RuntimeError, "Missing [Options] section in configuration file"
+    raise RuntimeError("Missing [Options] section in configuration file")
 
   # Ensure we got a tool list
-  if not Config.has_key('toollist'):
-    raise RuntimeError, "INTERNAL ERROR: Missing tool list assignment in [Options] section"
+  if 'toollist' not in Config:
+    raise RuntimeError("INTERNAL ERROR: Missing tool list assignment in [Options] section")
 
   # Make integers integers, floats floats
-  for key,val in Config.items():
+  for key,val in list(Config.items()):
     try:
       val = int(val)
       Config[key]=val
@@ -283,7 +283,7 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
       for index in range(0, len(temp), 2):
         MinimumFeatureDimension[ temp[index] ] = float( temp[index + 1] )
     except:
-      raise RuntimeError, "Illegal configuration string:" + Config['minimumfeaturesize']
+      raise RuntimeError("Illegal configuration string:" + Config['minimumfeaturesize'])
 
   # Process MergeOutputFiles section to set output file names
   if CP.has_section('MergeOutputFiles'):
@@ -303,10 +303,10 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
 
     # Ensure all jobs have a board outline
     if not CP.has_option(jobname, 'boardoutline'):
-      raise RuntimeError, "Job '%s' does not have a board outline specified" % jobname
+      raise RuntimeError("Job '%s' does not have a board outline specified" % jobname)
     
     if not CP.has_option(jobname, 'drills'):
-      raise RuntimeError, "Job '%s' does not have a drills layer specified" % jobname
+      raise RuntimeError("Job '%s' does not have a drills layer specified" % jobname)
 
     for layername in CP.options(jobname):
       if layername[0]=='*' or layername=='boardoutline':
@@ -323,10 +323,10 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
   del apfiles
 
   if 0:
-    keylist = GAMT.keys()
+    keylist = list(GAMT.keys())
     keylist.sort()
     for key in keylist:
-      print '%s' % GAMT[key]
+      print('%s' % GAMT[key])
     sys.exit(0)
 
   # Parse the tool list
@@ -350,8 +350,8 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
     if jobname=='MergeOutputFiles': continue
     if jobname=='GerbMergeGUI': continue
 
-    print '' # empty line before hand for readability
-    print 'Reading data from', jobname, '...'
+    print('') # empty line before hand for readability
+    print('Reading data from', jobname, '...')
 
     J = jobs.Job(jobname)
 
@@ -369,12 +369,12 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
         try:
           J.ExcellonDecimals = int(fname)
         except:
-          raise RuntimeError, "Excellon decimals '%s' in config file is not a valid integer" % fname
+          raise RuntimeError("Excellon decimals '%s' in config file is not a valid integer" % fname)
       elif layername=='repeat':
         try:
           J.Repeat = int(fname)
         except:
-          raise RuntimeError, "Repeat count '%s' in config file is not a valid integer" % fname
+          raise RuntimeError("Repeat count '%s' in config file is not a valid integer" % fname)
 
     for layername in CP.options(jobname):
       fname = CP.get(jobname, layername)
@@ -388,34 +388,34 @@ def parseConfigFile(fname, Config=Config, Jobs=Jobs):
 
     # Emit warnings if some layers are missing
     LL = LayerList.copy()
-    for layername in J.apxlat.keys():
-      assert LL.has_key(layername)
+    for layername in list(J.apxlat.keys()):
+      assert layername in LL
       del LL[layername]
 
     if LL:
       if errstr=='ERROR':
         do_abort=1
 
-      print '%s: Job %s is missing the following layers:' % (errstr, jobname)
-      for layername in LL.keys():
-        print '  %s' % layername
+      print('%s: Job %s is missing the following layers:' % (errstr, jobname))
+      for layername in list(LL.keys()):
+        print('  %s' % layername)
 
     # Store the job in the global Jobs dictionary, keyed by job name
     Jobs[jobname] = J
 
   if do_abort:
-    raise RuntimeError, 'Exiting since jobs are missing layers. Set AllowMissingLayers=1\nto override.'
+    raise RuntimeError('Exiting since jobs are missing layers. Set AllowMissingLayers=1\nto override.')
 
 if __name__=="__main__":
   CP = parseConfigFile(sys.argv[1])
-  print Config
+  print(Config)
   sys.exit(0)
 
   if 0:
-    for key, val in CP.defaults().items():
-      print '%s: %s' % (key,val)
+    for key, val in list(CP.defaults().items()):
+      print('%s: %s' % (key,val))
 
     for section in CP.sections():
-      print '[%s]' % section
+      print('[%s]' % section)
       for opt in CP.options(section):
-        print '  %s=%s' % (opt, CP.get(section, opt))
+        print('  %s=%s' % (opt, CP.get(section, opt)))

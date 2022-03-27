@@ -184,7 +184,7 @@ def findJob(jobname, rotatedFlipped, Jobs=config.Jobs):
     
                          
   try:
-    for existingjob in Jobs.keys():
+    for existingjob in list(Jobs.keys()):
       if existingjob.lower() == fullname.lower(): ## job names are case insensitive
         job = Jobs[existingjob]                 
         return jobs.JobLayout(job)
@@ -194,13 +194,13 @@ def findJob(jobname, rotatedFlipped, Jobs=config.Jobs):
   # Perhaps we just don't have a rotated or flipped job yet
   if rotatedFlipped[0] or rotatedFlipped[1]:
     try:      
-      for existingjob in Jobs.keys():
+      for existingjob in list(Jobs.keys()):
         if existingjob.lower() == jobname.lower(): ## job names are case insensitive
           job = Jobs[existingjob]
     except:
-      raise RuntimeError, "Job name '%s' not found" % jobname
+      raise RuntimeError("Job name '%s' not found" % jobname)
   else:
-    raise RuntimeError, "Job name '%s' not found" % jobname
+    raise RuntimeError("Job name '%s' not found" % jobname)
 
   # Make a rotated/flipped job
   job = jobs.rotateJob(job, rotatedFlipped[0], rotatedFlipped[1])
@@ -228,14 +228,14 @@ def parseJobSpec(spec, data):
         elif rotation == "Rotate270":
             rotated = 270
         else:
-            raise RuntimeError, "Unsupported rotation: %s" % rotation
+            raise RuntimeError("Unsupported rotation: %s" % rotation)
 
       else:
         rotated = 0
 
       return findJob(jobname, [rotated, 0])
     else:
-      raise RuntimeError, "Matrix panels not yet supported"
+      raise RuntimeError("Matrix panels not yet supported")
 
 def parseColSpec(spec, data):
   jobs = Col()
@@ -302,9 +302,9 @@ def parseLayoutFile(fname):
   """
 
   try:
-    fid = file(fname, 'rt')
-  except Exception, detail:
-    raise RuntimeError, "Unable to open layout file: %s\n  %s" % (fname, str(detail))
+    fid = open(fname, 'rt')
+  except Exception as detail:
+    raise RuntimeError("Unable to open layout file: %s\n  %s" % (fname, str(detail)))
 
   data = fid.read()
   fid.close()
@@ -312,16 +312,16 @@ def parseLayoutFile(fname):
 
   # Replace all CR's in data with nothing, to convert DOS line endings
   # to unix format (all LF's).
-  data = string.replace(data, '\x0D', '')
+  data = str.replace(data, '\x0D', '')
 
   tree = parser.parse(data)
 
   # Last element of tree is number of characters parsed
   if not tree[0]:
-    raise RuntimeError, "Layout file cannot be parsed"
+    raise RuntimeError("Layout file cannot be parsed")
 
   if tree[2] != len(data):
-    raise RuntimeError, "Parse error at character %d in layout file" % tree[2]
+    raise RuntimeError("Parse error at character %d in layout file" % tree[2])
 
   Rows = []
   for rowspec in tree[1]:
@@ -333,7 +333,7 @@ def parseLayoutFile(fname):
   return Rows
 
 if __name__=="__main__":
-  fid = file(sys.argv[1])
+  fid = open(sys.argv[1])
   testdata = fid.read()
   fid.close()
 
