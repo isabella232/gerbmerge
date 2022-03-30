@@ -6,21 +6,22 @@ import os
 from distutils.core import setup, Extension
 import distutils.sysconfig
 
+sys.path.append("./gerbmerge")
 from gerbmerge.__version_info__ import __version__
 
 if sys.version_info < (2,4,0):
-  print '*'*73
-  print 'GerbMerge version %d.%d requires Python 2.4 or higher' % (VERSION_MAJOR, VERSION_MINOR)
-  print '*'*73
+  print('*'*73)
+  print('GerbMerge version %d.%d requires Python 2.4 or higher' % (VERSION_MAJOR, VERSION_MINOR))
+  print('*'*73)
   sys.exit(1)
 
 if 0:
-  for key,val in distutils.sysconfig.get_config_vars().items():
-    print key
-    print '***********************'
-    print '  ', val
-    print
-    print
+  for key,val in list(distutils.sysconfig.get_config_vars().items()):
+    print(key)
+    print('***********************')
+    print('  ', val)
+    print()
+    print()
 
   sys.exit(0)
 
@@ -40,7 +41,7 @@ if sys.platform == 'win32' or ('bdist_wininst' in sys.argv):
   # Create top-level invocation program
   if not os.path.exists('misc'):
     os.makedirs('misc')
-  fid = file('misc/gerbmerge.bat', 'wt')
+  fid = open('misc/gerbmerge.bat', 'wt')
   fid.write( \
   r"""@echo off
 %s %s\gerbmerge\gerbmerge.py %%1 %%2 %%3 %%4 %%5 %%6 %%7 %%8 %%9
@@ -57,7 +58,7 @@ else:
   # Create top-level invocation program
   if not os.path.exists('misc'):
     os.makedirs('misc')
-  fid = file('misc/gerbmerge', 'wt')
+  fid = open('misc/gerbmerge', 'wt')
   fid.write( \
   r"""#!/bin/sh
 python %s/gerbmerge/gerbmerge.py $*
@@ -105,37 +106,37 @@ if sys.platform != "win32":
 if do_fix_perms:
   # Ensure package files and misc/help files are world readable-searchable.
   # Shouldn't Distutils do this for us?
-  print 'Setting permissions on installed files...',
+  print('Setting permissions on installed files...', end=' ')
   try:
     def fixperms(arg, dirname, names):
-      os.chmod(dirname, 0755)
+      os.chmod(dirname, 0o755)
       for name in names:
         fullname = os.path.join(dirname, name)
         if os.access(fullname, os.X_OK):
-          os.chmod(fullname, 0755)
+          os.chmod(fullname, 0o755)
         else:
-          os.chmod(fullname, 0644)
+          os.chmod(fullname, 0o644)
 
     os.path.walk(DestDir, fixperms, 1)
     os.path.walk(os.path.join(DestLib, 'site-packages/gerbmerge'), fixperms, 1)
 
-    os.chmod(os.path.join(BinDir, 'gerbmerge'), 0755)
-    print 'done'
+    os.chmod(os.path.join(BinDir, 'gerbmerge'), 0o755)
+    print('done')
   except:
-    print 'FAILED'
-    print
-    print '*** Please verify that the installed files have correct permissions. On'
-    print "*** systems without permission flags, you don't need to"
-    print '*** worry about it.' 
+    print('FAILED')
+    print()
+    print('*** Please verify that the installed files have correct permissions. On')
+    print("*** systems without permission flags, you don't need to")
+    print('*** worry about it.') 
 
 if sys.platform != "win32":
   if cmd[:7]=='install':
-    print
-    print '******** Installation Complete ******** '
-    print
-    print 'Sample files and documentation have been installed in:'
-    print '   ', DestDir
-    print
-    print 'A shortcut to starting the program has been installed as:'
-    print '   ', os.path.join(BinDir, 'gerbmerge')
-    print
+    print()
+    print('******** Installation Complete ******** ')
+    print()
+    print('Sample files and documentation have been installed in:')
+    print('   ', DestDir)
+    print()
+    print('A shortcut to starting the program has been installed as:')
+    print('   ', os.path.join(BinDir, 'gerbmerge'))
+    print()
